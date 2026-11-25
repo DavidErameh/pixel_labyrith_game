@@ -16,7 +16,7 @@ const Music = (() => {
   let currentKey   = null;
   let muted        = false;
   let pendingKey   = null;   // key requested while autoplay was blocked
-  const TARGET_VOL = 0.38;  // quieter than SFX so they cut through
+  const TARGET_VOL = 0.19;  // 50% of original 0.38 — quieter background music
 
   let fadeTimer = null;
 
