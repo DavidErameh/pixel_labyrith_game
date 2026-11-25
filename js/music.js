@@ -8,8 +8,8 @@
 const Music = (() => {
   const TRACKS = {
     title:       'music/The Bridge of Khazad Dum - Howard Shore.mp3',
-    classSelect: 'music/Dragon Age Inquisition Theme - Trevor Morris.mp3',
-    dungeon:     'music/Arrival - Hans Zimmer.mp3',
+    classSelect: 'music/Arrival - Hans Zimmer.mp3',
+    dungeon:     'music/Dragon Age Inquisition Theme - Trevor Morris.mp3',
   };
 
   let currentAudio = null;
