@@ -1,0 +1,470 @@
+/* ============================================================
+   PIXEL LABYRINTH — style.css
+   Dark dungeon pixel-art fantasy game
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --dungeon-black:  #0a0a0f;
+  --dungeon-dark:   #12121a;
+  --dungeon-stone:  #1e1e2e;
+  --dungeon-mid:    #2a2a3e;
+  --gold:           #ffd700;
+  --gold-dim:       #a0892a;
+  --red:            #e63946;
+  --green:          #2dc653;
+  --blue:           #4fa3e0;
+  --purple:         #9b5de5;
+  --torch-orange:   #ff8c00;
+  --text-light:     #e0d8c8;
+  --text-dim:       #8a8070;
+  --pixel-font:     'Press Start 2P', monospace;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--dungeon-black);
+  font-family: var(--pixel-font);
+  color: var(--text-light);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── Screens ──────────────────────────────────────────────── */
+.screen {
+  position: fixed; inset: 0;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 10;
+}
+.screen.active { display: flex; }
+
+/* ── TITLE SCREEN ─────────────────────────────────────────── */
+#screen-title {
+  background: var(--dungeon-black);
+  overflow: hidden;
+}
+#title-bg-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: 0; opacity: 0.35;
+}
+.title-container {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2rem;
+  padding: 2rem;
+  text-align: center;
+}
+.game-title {
+  font-size: clamp(1.6rem, 6vw, 3.5rem);
+  line-height: 1.4;
+  color: var(--gold);
+  text-shadow:
+    0 0 20px var(--torch-orange),
+    4px 4px 0 #000;
+  letter-spacing: 4px;
+}
+.game-title span { color: var(--text-light); }
+.game-subtitle {
+  font-size: clamp(0.45rem, 1.5vw, 0.65rem);
+  color: var(--gold);
+  margin-top: 0.5rem;
+}
+.game-lore-intro {
+  font-size: clamp(0.35rem, 1.2vw, 0.48rem);
+  color: var(--text-dim);
+  max-width: 420px;
+  line-height: 1.8;
+  margin-top: 0.4rem;
+}
+.continue-btn {
+  border-color: var(--purple) !important;
+  color: #d8b4fe !important;
+}
+.continue-btn:hover {
+  background: var(--purple) !important;
+  color: #fff !important;
+}
+.hidden { display: none !important; }
+.title-menu {
+  display: flex; flex-direction: column;
+  gap: 0.75rem; width: 100%;
+  max-width: 320px;
+}
+.title-footer {
+  font-size: 0.4rem;
+  color: var(--text-dim);
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.menu-btn {
+  font-family: var(--pixel-font);
+  font-size: clamp(0.5rem, 1.8vw, 0.75rem);
+  padding: 0.8rem 1.4rem;
+  background: var(--dungeon-mid);
+  color: var(--gold);
+  border: 2px solid var(--gold-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  image-rendering: pixelated;
+  letter-spacing: 1px;
+  width: 100%;
+}
+.menu-btn:hover, .menu-btn:focus {
+  background: var(--gold);
+  color: var(--dungeon-black);
+  border-color: var(--gold);
+  transform: scale(1.03);
+  outline: none;
+}
+.menu-btn:active { transform: scale(0.97); }
+.menu-btn.secondary {
+  background: transparent;
+  color: var(--text-dim);
+  border-color: var(--text-dim);
+  font-size: clamp(0.4rem, 1.4vw, 0.6rem);
+}
+.menu-btn.secondary:hover { background: var(--dungeon-mid); color: var(--text-light); }
+
+/* ── HOW TO PLAY ──────────────────────────────────────────── */
+#screen-howtoplay, #screen-leaderboard {
+  background: rgba(10,10,15,0.97);
+  overflow-y: auto;
+}
+.howto-container, .leaderboard-container {
+  max-width: 540px; width: 90%;
+  padding: 2rem 1.5rem;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 1.5rem;
+}
+.howto-container h2, .leaderboard-container h2 {
+  font-size: clamp(0.9rem, 3vw, 1.4rem);
+  color: var(--gold);
+  text-align: center;
+}
+.howto-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.75rem; width: 100%;
+}
+.howto-item {
+  background: var(--dungeon-stone);
+  border: 1px solid var(--dungeon-mid);
+  padding: 0.6rem;
+  font-size: clamp(0.35rem, 1.2vw, 0.52rem);
+  display: flex; align-items: flex-start; gap: 0.4rem;
+}
+.controls-section { width: 100%; }
+.controls-section h3 { color: var(--gold); font-size: 0.65rem; margin-bottom: 0.75rem; }
+.controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.controls-grid > div { font-size: 0.4rem; color: var(--text-light); line-height: 1.8; }
+
+/* ── LEADERBOARD ──────────────────────────────────────────── */
+#leaderboard-list { width: 100%; }
+.lb-entry {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--dungeon-mid);
+  font-size: 0.45rem;
+}
+.lb-entry:nth-child(1) { color: #ffd700; }
+.lb-entry:nth-child(2) { color: #c0c0c0; }
+.lb-entry:nth-child(3) { color: #cd7f32; }
+.lb-rank { width: 30px; color: var(--text-dim); }
+.lb-name { flex: 1; }
+.lb-score { color: var(--gold); }
+.lb-floor { color: var(--blue); font-size: 0.4rem; }
+.lb-empty { color: var(--text-dim); font-size: 0.45rem; text-align: center; padding: 2rem; }
+
+/* ── GAME SCREEN ──────────────────────────────────────────── */
+#screen-game {
+  background: var(--dungeon-black);
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+/* HUD */
+#hud {
+  width: 100%;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.4rem 0.75rem;
+  background: rgba(10,10,15,0.95);
+  border-bottom: 2px solid var(--dungeon-mid);
+  flex-shrink: 0;
+  z-index: 20;
+  position: relative;
+}
+#hud-left, #hud-right {
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+#hud-health {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.45rem;
+}
+.hud-label {
+  font-size: 0.4rem; color: var(--text-dim); min-width: 1.5rem;
+}
+#health-bar-wrap {
+  width: 80px; height: 10px;
+  background: var(--dungeon-dark);
+  border: 1px solid var(--dungeon-mid);
+  overflow: hidden;
+}
+#health-bar {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg, var(--red), #ff6b6b);
+  transition: width 0.3s;
+}
+#hp-text { font-size: 0.38rem; color: var(--text-dim); }
+
+#hud-powerup {
+  display: flex; align-items: center; gap: 0.3rem;
+}
+#powerup-icon { font-size: 0.7rem; }
+#powerup-timer-bar-wrap {
+  width: 50px; height: 6px;
+  background: var(--dungeon-dark); border: 1px solid var(--dungeon-mid); overflow: hidden;
+}
+#powerup-timer-bar {
+  height: 100%; width: 100%;
+  background: var(--purple);
+  transition: width 0.1s linear;
+}
+
+#hud-center {
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+}
+#hud-level-label { font-size: 0.35rem; color: var(--text-dim); }
+#hud-level { font-size: 1rem; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+
+#hud-right { align-items: flex-end; }
+#hud-score, #hud-keys { font-size: 0.45rem; color: var(--text-light); }
+#score-val { color: var(--gold); }
+#keys-val { color: var(--gold); }
+
+/* GAME WRAP */
+#game-wrap {
+  position: relative;
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  width: 100%;
+}
+#game-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  outline: none;
+}
+#focus-prompt {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 18, 26, 0.9);
+  border: 1px solid var(--gold-dim);
+  color: var(--text-light);
+  font-size: 0.45rem;
+  padding: 0.5rem 0.9rem;
+  pointer-events: none;
+  z-index: 25;
+  white-space: nowrap;
+}
+#focus-prompt.hidden { display: none; }
+#minimap-canvas {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 100px; height: 100px;
+  border: 2px solid var(--dungeon-mid);
+  background: rgba(10,10,15,0.8);
+  image-rendering: pixelated;
+}
+
+/* PAUSE & MUTE BTNS — live inside #hud-right */
+.hud-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+}
+#btn-pause, #btn-mute {
+  font-family: var(--pixel-font);
+  font-size: 0.65rem;
+  background: rgba(30,30,46,0.8);
+  border: 1px solid var(--dungeon-mid);
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0.25rem 0.45rem;
+}
+#btn-pause:hover, #btn-mute:hover { background: var(--dungeon-mid); color: var(--gold); }
+
+/* ── MOBILE D-PAD ─────────────────────────────────────────── */
+#dpad {
+  position: fixed; bottom: 1rem; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px;
+  z-index: 30;
+}
+.dpad-row {
+  display: flex; gap: 2px;
+}
+.dpad-btn {
+  width: 56px; height: 56px;
+  font-size: 1.1rem;
+  background: rgba(30,30,46,0.85);
+  border: 2px solid var(--dungeon-mid);
+  color: var(--text-light);
+  cursor: pointer;
+  font-family: var(--pixel-font);
+  -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.08s;
+}
+.dpad-btn:active, .dpad-btn.pressed {
+  background: var(--dungeon-mid);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.dpad-center {
+  background: rgba(42,42,62,0.9);
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+/* ── OVERLAYS ─────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.75);
+}
+.overlay.hidden { display: none; }
+.overlay-box {
+  background: var(--dungeon-stone);
+  border: 3px solid var(--gold-dim);
+  padding: 2rem 2.5rem;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 1rem;
+  max-width: 380px; width: 90%;
+  text-align: center;
+}
+.overlay-box h2 {
+  font-size: clamp(0.8rem, 3vw, 1.1rem);
+  color: var(--gold);
+}
+.overlay-box p { font-size: 0.45rem; color: var(--text-light); line-height: 1.8; }
+.overlay-box strong { color: var(--gold); }
+.overlay-box input {
+  font-family: var(--pixel-font);
+  font-size: 0.55rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--dungeon-dark);
+  border: 2px solid var(--dungeon-mid);
+  color: var(--text-light);
+  width: 100%;
+  text-align: center;
+  outline: none;
+}
+.overlay-box input:focus { border-color: var(--gold); }
+.levelup-box, .victory-box { border-color: var(--green); }
+.levelup-box h2 { color: var(--green); }
+.victory-box { border-color: var(--gold); }
+.victory-box h2 { color: var(--gold); font-size: clamp(0.9rem, 3.5vw, 1.4rem); }
+.levelup-stats { display: flex; gap: 1.5rem; font-size: 0.4rem; color: var(--text-dim); }
+.lore-box { border-color: var(--purple); max-width: 440px; }
+.lore-box h2 { color: #d8b4fe; }
+#lore-text {
+  font-size: 0.46rem;
+  color: var(--text-light);
+  line-height: 2;
+  font-style: italic;
+}
+
+/* ── FLOOR INTRO BANNER ───────────────────────────────────── */
+#floor-banner {
+  position: fixed;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 10, 18, 0.92);
+  border-top: 2px solid var(--gold-dim);
+  border-bottom: 2px solid var(--gold-dim);
+  padding: 1rem 2rem;
+  text-align: center;
+  z-index: 90;
+  pointer-events: none;
+  max-width: 90%;
+  width: 440px;
+  animation: fadeInUp 0.3s ease-out;
+}
+#floor-banner-sub {
+  font-size: 0.45rem;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+}
+#floor-banner-title {
+  font-size: clamp(0.65rem, 2.2vw, 0.95rem);
+  color: var(--gold);
+  margin-bottom: 0.6rem;
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.6);
+}
+#floor-banner-text {
+  font-size: 0.42rem;
+  color: var(--text-light);
+  line-height: 1.8;
+}
+
+/* ── TOAST NOTIFICATION ───────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 6rem; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30,30,46,0.95);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  font-family: var(--pixel-font);
+  font-size: 0.5rem;
+  padding: 0.5rem 1rem;
+  z-index: 200;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+#toast.hidden { opacity: 0; pointer-events: none; }
+
+/* ── RESPONSIVE ───────────────────────────────────────────── */
+@media (pointer: fine) {
+  /* has mouse — hide d-pad */
+  .mobile-only { display: none !important; }
+}
+@media (pointer: coarse) {
+  /* touch device — show d-pad, adjust game wrap */
+  #game-wrap { max-height: calc(100vh - 180px); }
+}
+@media (max-width: 480px) {
+  #hud { padding: 0.3rem 0.5rem; }
+  #health-bar-wrap { width: 60px; }
+  #minimap-canvas { width: 70px; height: 70px; }
+  .dpad-btn { width: 50px; height: 50px; font-size: 1rem; }
+}
+
+/* ── ANIMATIONS ───────────────────────────────────────────── */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.game-title { animation: pulse 3s ease-in-out infinite; }
+#hud-level { animation: flicker 2s ease-in-out infinite; }
+.overlay-box { animation: fadeInUp 0.2s ease-out; }

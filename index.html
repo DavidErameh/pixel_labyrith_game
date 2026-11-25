@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pixel Labyrinth</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- SCREENS -->
+  <div id="screen-title" class="screen active">
+    <div class="title-container">
+      <div class="title-logo">
+        <div class="logo-pixel-art" id="logo-art"></div>
+        <h1 class="game-title">PIXEL<br/><span>LABYRINTH</span></h1>
+        <p class="game-subtitle">⚔️ The Sunken Vaults of Oakhaven ⚔️</p>
+        <p class="game-lore-intro">Descend through five cursed floors. Uncover the truth of the Hollow Warden.</p>
+      </div>
+      <div class="title-menu">
+        <button class="menu-btn continue-btn hidden" id="btn-continue">🔮 CONTINUE <span id="continue-info"></span></button>
+        <button class="menu-btn" id="btn-newgame">▶ NEW GAME</button>
+        <button class="menu-btn" id="btn-howtoplay">? HOW TO PLAY</button>
+        <button class="menu-btn secondary" id="btn-leaderboard">🏆 HIGH SCORES</button>
+      </div>
+      <div class="title-footer">
+        <p>Use WASD / Arrow Keys on PC &nbsp;|&nbsp; D-Pad on Mobile</p>
+      </div>
+    </div>
+    <canvas id="title-bg-canvas"></canvas>
+  </div>
+
+  <div id="screen-howtoplay" class="screen">
+    <div class="howto-container">
+      <h2>HOW TO PLAY</h2>
+      <div class="howto-grid">
+        <div class="howto-item">🗡️ <span>Attack enemies by moving into them</span></div>
+        <div class="howto-item">❤️ <span>Collect hearts to restore HP</span></div>
+        <div class="howto-item">💎 <span>Grab gems & coins for score</span></div>
+        <div class="howto-item">🗝️ <span>Find keys to unlock the exit door</span></div>
+        <div class="howto-item">⚡ <span>Power-ups give temporary boosts</span></div>
+        <div class="howto-item">🗺️ <span>Mini-map (top-right) shows explored areas</span></div>
+        <div class="howto-item">👑 <span>Defeat the boss to advance floors</span></div>
+        <div class="howto-item">💀 <span>Enemies respawn each new floor</span></div>
+      </div>
+      <div class="controls-section">
+        <h3>CONTROLS</h3>
+        <div class="controls-grid">
+          <div>⌨️ <strong>PC:</strong> WASD / Arrow Keys to move<br/>Space to attack / interact</div>
+          <div>📱 <strong>Mobile:</strong> On-screen D-Pad joystick</div>
+        </div>
+      </div>
+      <button class="menu-btn" id="btn-back-howto">◀ BACK</button>
+    </div>
+  </div>
+
+  <div id="screen-leaderboard" class="screen">
+    <div class="leaderboard-container">
+      <h2>🏆 HIGH SCORES</h2>
+      <div id="leaderboard-list"></div>
+      <button class="menu-btn" id="btn-back-lb">◀ BACK</button>
+    </div>
+  </div>
+
+  <div id="screen-game" class="screen">
+    <!-- HUD -->
+    <div id="hud">
+      <div id="hud-left">
+        <div id="hud-health">
+          <span class="hud-label">HP</span>
+          <div id="health-bar-wrap"><div id="health-bar"></div></div>
+          <span id="hp-text">10/10</span>
+        </div>
+        <div id="hud-powerup" class="hidden">
+          <span id="powerup-icon">⚡</span>
+          <div id="powerup-timer-bar-wrap"><div id="powerup-timer-bar"></div></div>
+        </div>
+      </div>
+      <div id="hud-center">
+        <span id="hud-level-label">FLOOR</span>
+        <span id="hud-level">1</span>
+      </div>
+      <div id="hud-right">
+        <div id="hud-score">💎 <span id="score-val">0</span></div>
+        <div id="hud-keys">🗝️ <span id="keys-val">0</span></div>
+        <div class="hud-actions">
+          <button id="btn-mute" title="Mute/Unmute Sound">🔊</button>
+          <button id="btn-pause" title="Pause (Esc)">⏸</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME CANVAS -->
+    <div id="game-wrap">
+      <canvas id="game-canvas" tabindex="0"></canvas>
+      <!-- MINIMAP -->
+      <canvas id="minimap-canvas"></canvas>
+      <!-- Click-to-focus prompt (shown until user interacts) -->
+      <div id="focus-prompt">🖱️ Click here to play &nbsp;|&nbsp; ⌨️ WASD / Arrow Keys</div>
+    </div>
+
+    <!-- MOBILE D-PAD -->
+    <div id="dpad" class="mobile-only">
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpad-up" aria-label="Up">▲</button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpad-left" aria-label="Left">◀</button>
+        <button class="dpad-btn dpad-center" id="dpad-action" aria-label="Action">⚔</button>
+        <button class="dpad-btn" id="dpad-right" aria-label="Right">▶</button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpad-down" aria-label="Down">▼</button>
+      </div>
+    </div>
+
+    <!-- PAUSE BTN is now inside HUD (hud-right) -->
+  </div>
+
+  <!-- OVERLAYS -->
+  <div id="floor-banner" class="hidden">
+    <div id="floor-banner-sub">FLOOR 1</div>
+    <div id="floor-banner-title">THE MOSSBOUND THRESHOLD</div>
+    <div id="floor-banner-text"></div>
+  </div>
+
+  <div id="overlay-lore" class="overlay hidden">
+    <div class="overlay-box lore-box">
+      <h2>📜 ANCIENT TABLET</h2>
+      <p id="lore-text"></p>
+      <button class="menu-btn" id="btn-close-lore">CONTINUE</button>
+    </div>
+  </div>
+
+  <div id="overlay-pause" class="overlay hidden">
+    <div class="overlay-box">
+      <h2>⏸ PAUSED</h2>
+      <button class="menu-btn" id="btn-resume">▶ RESUME</button>
+      <button class="menu-btn" id="btn-pause-save">💾 SAVE PROGRESS</button>
+      <button class="menu-btn secondary" id="btn-quit">🏠 MAIN MENU</button>
+    </div>
+  </div>
+
+  <div id="overlay-gameover" class="overlay hidden">
+    <div class="overlay-box">
+      <h2>💀 GAME OVER</h2>
+      <p>You fell on <strong>Floor <span id="go-floor">1</span></strong></p>
+      <p>Score: <strong><span id="go-score">0</span></strong></p>
+      <input id="go-name-input" type="text" placeholder="Enter your name..." maxlength="12" />
+      <button class="menu-btn" id="btn-save-score">💾 SAVE SCORE</button>
+      <button class="menu-btn continue-btn hidden" id="btn-load-save">🔮 LOAD SAVE POINT</button>
+      <button class="menu-btn" id="btn-retry">🔄 NEW RUN</button>
+      <button class="menu-btn secondary" id="btn-go-menu">🏠 MENU</button>
+    </div>
+  </div>
+
+  <div id="overlay-levelup" class="overlay hidden">
+    <div class="overlay-box levelup-box">
+      <h2>🎉 FLOOR CLEARED!</h2>
+      <p>Proceeding to <strong>Floor <span id="lu-floor">2</span></strong></p>
+      <div class="levelup-stats">
+        <div>Enemies slain: <span id="lu-kills">0</span></div>
+        <div>Gems collected: <span id="lu-gems">0</span></div>
+      </div>
+      <button class="menu-btn" id="btn-nextlevel">⬇️ DESCEND</button>
+    </div>
+  </div>
+
+  <div id="overlay-victory" class="overlay hidden">
+    <div class="overlay-box victory-box">
+      <h2>👑 VICTORY!</h2>
+      <p>You have conquered the Labyrinth!</p>
+      <p>Final Score: <strong><span id="vic-score">0</span></strong></p>
+      <input id="vic-name-input" type="text" placeholder="Enter your name..." maxlength="12" />
+      <button class="menu-btn" id="btn-save-vic-score">💾 SAVE SCORE</button>
+      <button class="menu-btn secondary" id="btn-vic-menu">🏠 MENU</button>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="hidden"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/maze.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
