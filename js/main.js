@@ -7,6 +7,7 @@
 
   let game = null;
   let selectedClass = 'knight'; // set by class select screen
+  let startFloorTarget = 1;     // 1 = normal run, C.FLOORS = direct Boss Floor
 
   // ── Screen Manager ──────────────────────────────────────────
   function showScreen(id) {
@@ -51,6 +52,12 @@
   });
 
   document.getElementById('btn-newgame').addEventListener('click', () => {
+    startFloorTarget = 1;
+    showScreen('screen-classselect');
+  });
+
+  document.getElementById('btn-boss-floor').addEventListener('click', () => {
+    startFloorTarget = C.FLOORS;
     showScreen('screen-classselect');
   });
 
@@ -165,7 +172,11 @@
       game.loadSaveData(saveData);
       UI.showToast(`🔮 Resumed Floor ${saveData.floor}!`);
     } else {
-      game.startFloor(1);
+      game.startFloor(startFloorTarget);
+      if (startFloorTarget === C.FLOORS) {
+        UI.showToast('👑 Entered Boss Floor — Crimson Rider awaits!');
+      }
+      startFloorTarget = 1;
     }
 
     showScreen('screen-game');
