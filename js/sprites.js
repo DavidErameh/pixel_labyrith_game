@@ -124,23 +124,10 @@ const Sprites = (() => {
     px(ctx, '#f3e8ff', x + H - 1, y + 7 + bob, 2, 6);
   }
 
-  function drawLoreTablet(ctx, x, y, frame) {
-    drawFloor(ctx, x, y);
-    const pulse = 0.5 + 0.5 * Math.sin(frame * 0.3);
-    // Monolith slab
-    px(ctx, '#3b384a', x + 8, y + 5, T - 16, T - 8);
-    px(ctx, '#524e66', x + 9, y + 6, T - 18, 3);
-    // Glowing runes
-    ctx.fillStyle = `rgba(255, 215, 0, ${0.4 + 0.5 * pulse})`;
-    ctx.fillRect(x + 11, y + 11, 10, 2);
-    ctx.fillRect(x + 11, y + 15, 7, 2);
-    ctx.fillRect(x + 11, y + 19, 9, 2);
-  }
-
   // ── ENTITIES ───────────────────────────────────────────────
 
   // ── KNIGHT (Player class: knight) ─────────────────────────
-  function drawKnight(ctx, x, y, dir, frame, shieldActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false) {
+  function drawKnight(ctx, x, y, dir, frame, shieldActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false, flameSwordActive = false) {
     const f = frame % 4;
     const bobY = (f < 2) ? 0 : -1;
     const isAttacking = attackProgress > 0;
@@ -149,46 +136,61 @@ const Sprites = (() => {
 
     // Shield aura glow (blue when active)
     if (shieldActive) {
-      ctx.fillStyle = 'rgba(79,163,224,0.2)';
+      ctx.fillStyle = 'rgba(79,163,224,0.22)';
       ctx.beginPath();
       ctx.arc(px0 + H, py + H, H + 6, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Short red cape behind body
-    px(ctx, '#8b1515', px0 + 9, py + 10, T - 18, 14);
-    px(ctx, '#6b1010', px0 + 10, py + 20, T - 20, 6);
+    // Animated crimson cape behind body
+    const capeWave = (f % 2 === 0) ? 0 : 1;
+    px(ctx, '#6b1010', px0 + 8 - capeWave, py + 10, T - 16 + capeWave * 2, 15);
+    px(ctx, '#4e0a0a', px0 + 9, py + 22, 4, 5 + capeWave);
+    px(ctx, '#4e0a0a', px0 + T - 13, py + 22, 4, 5 - capeWave);
 
-    // Plate body — steel grey
-    px(ctx, '#5c6e7e', px0 + 7, py + 13, T - 14, T - 19);
-    // Breastplate center stripe
-    px(ctx, '#8ca0b0', px0 + H - 2, py + 14, 4, T - 22);
-    // Pauldrons (shoulder plates)
-    px(ctx, '#7a8fa6', px0 + 3, py + 13, 6, 7);
-    px(ctx, '#7a8fa6', px0 + T - 9, py + 13, 6, 7);
-    px(ctx, '#94a9bc', px0 + 4, py + 13, 4, 2);
-    px(ctx, '#94a9bc', px0 + T - 8, py + 13, 4, 2);
-    // Waist/belt
-    px(ctx, '#ffd700', px0 + 7, py + 22, T - 14, 3);
+    // Plate body — bright silver-grey
+    px(ctx, '#c4cdd8', px0 + 7, py + 13, T - 14, T - 19);
+    // Breastplate highlight & central ridge
+    px(ctx, '#e2e8f0', px0 + 9, py + 14, T - 18, 6);
+    px(ctx, '#f8fafc', px0 + H - 1, py + 14, 2, 8);
+    // Gorget (neck plate)
+    px(ctx, '#8b95a5', px0 + 9, py + 12, T - 18, 2);
+    // Layered pauldrons with rivets
+    px(ctx, '#c4cdd8', px0 + 3, py + 13, 6, 7);
+    px(ctx, '#c4cdd8', px0 + T - 9, py + 13, 6, 7);
+    px(ctx, '#e2e8f0', px0 + 4, py + 13, 4, 2);
+    px(ctx, '#e2e8f0', px0 + T - 8, py + 13, 4, 2);
+    px(ctx, '#f8fafc', px0 + 5, py + 17, 1, 1);
+    px(ctx, '#f8fafc', px0 + T - 6, py + 17, 1, 1);
+    // Articulated gauntlets
+    px(ctx, '#8b95a5', px0 + 4, py + 20, 4, 3);
+    px(ctx, '#8b95a5', px0 + T - 8, py + 20, 4, 3);
+    // Segmented fauld & waist belt
+    px(ctx, '#8b95a5', px0 + 7, py + 21, T - 14, 2);
+    px(ctx, '#ffd700', px0 + H - 2, py + 21, 4, 2); // belt buckle
+    px(ctx, '#c4cdd8', px0 + 8, py + 23, T - 16, 2);
 
-    // Helm — full closed visor
-    px(ctx, '#5c6e7e', px0 + 7, py + 2, T - 14, 13);
-    // Visor slit
-    px(ctx, '#94a9bc', px0 + 7, py + 2, T - 14, 3); // top highlight
-    px(ctx, '#1a1a2e', px0 + 10, py + 7, T - 20, 3); // visor slit (dark)
-    if (dir !== 'up') {
-      px(ctx, '#ff6600', px0 + 11, py + 8, 4, 2); // eye glow left
-      px(ctx, '#ff6600', px0 + T - 15, py + 8, 4, 2); // eye glow right
-    }
+    // Helm — rounded light silver-grey closed visor (NO EYES VISIBLE)
+    px(ctx, '#c4cdd8', px0 + 8, py + 2, T - 16, 12);
+    px(ctx, '#e2e8f0', px0 + 9, py + 1, T - 18, 4); // rounded crown highlight
+    px(ctx, '#8b95a5', px0 + 7, py + 5, T - 14, 8);  // lower visor shadow
+    px(ctx, '#c4cdd8', px0 + 8, py + 5, T - 16, 6);
+    // Pure dark visor slit (no red eyes)
+    px(ctx, '#1a1a2e', px0 + 10, py + 7, T - 20, 3);
+    // Nasal guard
+    px(ctx, '#e2e8f0', px0 + H - 1, py + 5, 2, 6);
+    // Helm rivets
+    px(ctx, '#f8fafc', px0 + 9, py + 6, 1, 1);
+    px(ctx, '#f8fafc', px0 + T - 10, py + 6, 1, 1);
     // Plume
-    px(ctx, '#ffd700', px0 + H - 1, py + 1, 2, 4);
-    px(ctx, '#ffaa00', px0 + H - 2, py - 2, 4, 4);
+    px(ctx, '#b91c1c', px0 + H - 1, py - 2, 3, 4);
+    px(ctx, '#ffd700', px0 + H - 1, py + 0, 2, 2);
 
-    // Grieves (leg armour)
-    px(ctx, '#5c6e7e', px0 + 8, py + T - 10, 6, 10);
-    px(ctx, '#5c6e7e', px0 + T - 14, py + T - 10, 6, 10);
-    px(ctx, '#94a9bc', px0 + 9, py + T - 10, 4, 2);
-    px(ctx, '#94a9bc', px0 + T - 13, py + T - 10, 4, 2);
+    // Greaves (leg armour)
+    px(ctx, '#8b95a5', px0 + 8, py + T - 9, 6, 9);
+    px(ctx, '#8b95a5', px0 + T - 14, py + T - 9, 6, 9);
+    px(ctx, '#e2e8f0', px0 + 9, py + T - 9, 4, 3);
+    px(ctx, '#e2e8f0', px0 + T - 13, py + T - 9, 4, 3);
 
     // Sticky web if rooted
     if (isRooted) {
@@ -202,8 +204,9 @@ const Sprites = (() => {
       ctx.stroke();
     }
 
-    // ── Sword (right arm) ─────
-    const bladeCol = '#d4e0eb';
+    // ── Redesigned Broadsword (right arm) ─────
+    const bladeCol = flameSwordActive ? '#ff8c00' : '#cbd5e1';
+    const edgeCol  = flameSwordActive ? '#fef08a' : '#ffffff';
     const guardCol = '#ffd700';
     if (isAttacking) {
       ctx.save();
@@ -218,22 +221,42 @@ const Sprites = (() => {
       const swingAngle = baseAngle + (-0.65 + attackProgress * 1.3) * Math.PI * 0.65;
       ctx.translate(pivotX, pivotY);
       ctx.rotate(swingAngle);
-      // Guard
+      // Pommel & grip
       ctx.fillStyle = guardCol;
-      ctx.fillRect(5, -5, 3, 10);
-      // Blade
+      ctx.fillRect(1, -2, 3, 4);
+      ctx.fillStyle = '#5c3d1e';
+      ctx.fillRect(3, -1, 3, 2);
+      // Crossguard with gem
+      ctx.fillStyle = guardCol;
+      ctx.fillRect(6, -6, 3, 12);
+      ctx.fillStyle = flameSwordActive ? '#ff4400' : '#ef4444';
+      ctx.fillRect(6, -1, 3, 2);
+      // Wider blade (5px) with fuller ridge
       ctx.fillStyle = bladeCol;
-      ctx.fillRect(8, -2, 22, 4);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(10, -1, 17, 1);
+      ctx.fillRect(9, -2.5, 22, 5);
+      ctx.fillStyle = edgeCol;
+      ctx.fillRect(10, -0.5, 19, 1); // central ridge
+      // Flame overlay
+      if (flameSwordActive) {
+        ctx.fillStyle = 'rgba(255, 100, 0, 0.55)';
+        ctx.fillRect(9, -5, 24, 10);
+      }
       ctx.restore();
     } else {
-      if (dir === 'left') {
-        px(ctx, bladeCol, px0 + 1, py + 8, 3, 18);
-        px(ctx, guardCol, px0 - 1, py + 17, 7, 3);
-      } else {
-        px(ctx, bladeCol, px0 + T - 4, py + 8, 3, 18);
-        px(ctx, guardCol, px0 + T - 6, py + 17, 7, 3);
+      const sx = dir === 'left' ? px0 - 1 : px0 + T - 4;
+      // Blade (5px wide)
+      px(ctx, bladeCol, sx, py + 6, 5, 19);
+      px(ctx, edgeCol, sx + 2, py + 7, 1, 16); // fuller
+      // Crossguard & gem
+      px(ctx, guardCol, sx - 2, py + 19, 9, 3);
+      px(ctx, flameSwordActive ? '#ff4400' : '#ef4444', sx + 2, py + 19, 1, 3);
+      // Pommel
+      px(ctx, guardCol, sx + 1, py + 24, 3, 2);
+      if (flameSwordActive) {
+        const fl = (f % 2 === 0) ? 1 : -1;
+        ctx.fillStyle = 'rgba(255, 120, 0, 0.65)';
+        ctx.fillRect(sx - 1, py + 4 + fl, 7, 16);
+        px(ctx, '#fde047', sx + 1, py + 3 - fl, 3, 4);
       }
     }
 
@@ -241,7 +264,6 @@ const Sprites = (() => {
     if (shieldActive) {
       const sx = dir === 'left' ? px0 + T - 9 : px0 + 1;
       const sy = py + 11;
-      // Kite shape
       ctx.fillStyle = '#1e3a8a';
       ctx.beginPath();
       ctx.moveTo(sx + 4, sy);
@@ -252,7 +274,6 @@ const Sprites = (() => {
       ctx.lineTo(sx, sy + 3);
       ctx.closePath();
       ctx.fill();
-      // Shield face
       ctx.fillStyle = '#3b82f6';
       ctx.beginPath();
       ctx.moveTo(sx + 4, sy + 1);
@@ -263,7 +284,6 @@ const Sprites = (() => {
       ctx.lineTo(sx + 1, sy + 3);
       ctx.closePath();
       ctx.fill();
-      // Gold crest cross
       px(ctx, '#ffd700', sx + 3, sy + 3, 2, 8);
       px(ctx, '#ffd700', sx + 1, sy + 6, 6, 2);
     }
@@ -292,42 +312,40 @@ const Sprites = (() => {
       ctx.stroke();
     }
 
-    // Robe — dark navy/purple, full length
+    // Robe — dark navy/purple, full length with layered inner lining
     px(ctx, '#2d1b55', px0 + 7, py + 13, T - 14, T - 15);
-    // Robe highlight
+    px(ctx, '#1e113a', px0 + 11, py + 14, T - 22, T - 16); // inner lining
     px(ctx, '#3d2570', px0 + 8, py + 13, 4, T - 17);
     px(ctx, '#3d2570', px0 + T - 12, py + 13, 4, T - 17);
-    // Robe hem decoration
+    // Robe hem decoration + star sparkles
     ctx.fillStyle = '#6d28d9';
     ctx.fillRect(px0 + 7, py + T - 6, T - 14, 2);
+    px(ctx, f % 2 === 0 ? '#ffd700' : '#c084fc', px0 + 9, py + T - 6, 2, 1);
+    px(ctx, f % 2 === 0 ? '#c084fc' : '#ffd700', px0 + T - 12, py + T - 6, 2, 1);
     // Belt / waist clasp
     px(ctx, '#ffd700', px0 + H - 4, py + 22, 8, 2);
 
     // Face / head — small beard
-    px(ctx, '#c8a87e', px0 + 10, py + 7, T - 20, 9); // face
+    px(ctx, '#c8a87e', px0 + 10, py + 7, T - 20, 9);
     if (dir !== 'up') {
-      px(ctx, '#1a1a2e', px0 + 12, py + 9, 2, 2); // eyes
+      px(ctx, '#1a1a2e', px0 + 12, py + 9, 2, 2);
       px(ctx, '#1a1a2e', px0 + T - 14, py + 9, 2, 2);
     }
-    px(ctx, '#e0e0e0', px0 + 10, py + 14, T - 20, 3); // white beard
+    px(ctx, '#e0e0e0', px0 + 10, py + 14, T - 20, 3);
 
-    // Pointed wizard hat — deep purple, gold stars
-    // Hat brim
+    // Pointed wizard hat — slight droop to the right
     px(ctx, '#3d1f6e', px0 + 6, py + 6, T - 12, 3);
-    // Hat cone
     ctx.fillStyle = '#3d1f6e';
     ctx.beginPath();
-    ctx.moveTo(px0 + H, py - 5);
+    ctx.moveTo(px0 + H + 2, py - 5); // drooping tip
     ctx.lineTo(px0 + T - 8, py + 7);
     ctx.lineTo(px0 + 8, py + 7);
     ctx.closePath();
     ctx.fill();
-    // Stars on hat
-    px(ctx, '#ffd700', px0 + H - 1, py, 2, 2);
+    px(ctx, '#ffd700', px0 + H, py, 2, 2);
     px(ctx, '#ffd700', px0 + H + 3, py + 3, 1, 1);
     px(ctx, '#c084fc', px0 + H - 3, py + 3, 1, 1);
 
-    // Sticky web if rooted
     if (isRooted) {
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
@@ -339,9 +357,8 @@ const Sprites = (() => {
       ctx.stroke();
     }
 
-    // Staff (right hand)
+    // Staff (right hand) — twisted wood grain & larger orb with inner flame
     if (isAttacking) {
-      // Staff thrust forward
       ctx.save();
       const pivotX = px0 + H;
       const pivotY = py + H;
@@ -349,45 +366,45 @@ const Sprites = (() => {
       const swingAngle = baseAngle + (-0.4 + attackProgress * 0.8) * 0.4;
       ctx.translate(pivotX, pivotY);
       ctx.rotate(swingAngle);
-      // Staff shaft
       ctx.fillStyle = '#5c3d1e';
       ctx.fillRect(4, -2, 24, 4);
-      // Orb at tip — glowing orange
+      ctx.fillStyle = '#7c532a';
+      ctx.fillRect(8, -1, 4, 2);
+      ctx.fillRect(16, -2, 4, 2);
       const orbPulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.01);
-      ctx.fillStyle = `rgba(255,100,0,${0.4 * orbPulse})`;
+      ctx.fillStyle = `rgba(255,100,0,${0.45 * orbPulse})`;
       ctx.beginPath();
-      ctx.arc(28, 0, 7, 0, Math.PI * 2);
+      ctx.arc(28, 0, 8, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#ff6600';
       ctx.beginPath();
-      ctx.arc(28, 0, 4, 0, Math.PI * 2);
+      ctx.arc(28, 0, 5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#ffcc00';
+      ctx.fillStyle = '#fef08a';
       ctx.beginPath();
-      ctx.arc(27, -1, 2, 0, Math.PI * 2);
+      ctx.arc(28, 0, 2.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     } else {
-      // Staff at rest
       const staffX = dir === 'left' ? px0 + 4 : px0 + T - 7;
       px(ctx, '#5c3d1e', staffX, py + 5, 3, T - 7);
-      // Orb at top of staff
+      px(ctx, '#7c532a', staffX, py + 10, 2, 3);
+      px(ctx, '#7c532a', staffX + 1, py + 17, 2, 3);
       const orbPulse = 0.6 + 0.4 * Math.sin(Date.now() * 0.006);
-      ctx.fillStyle = `rgba(255,100,0,${0.35 * orbPulse})`;
+      ctx.fillStyle = `rgba(255,100,0,${0.4 * orbPulse})`;
       ctx.beginPath();
-      ctx.arc(staffX + 1, py + 4, 6, 0, Math.PI * 2);
+      ctx.arc(staffX + 1, py + 4, 7, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#ff6600';
       ctx.beginPath();
-      ctx.arc(staffX + 1, py + 4, 3, 0, Math.PI * 2);
+      ctx.arc(staffX + 1, py + 4, 4, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#ffcc00';
+      ctx.fillStyle = '#fef08a';
       ctx.beginPath();
-      ctx.arc(staffX, py + 3, 1.5, 0, Math.PI * 2);
+      ctx.arc(staffX + 1, py + 4, 2, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Left hand ember glow (magic ready)
     const mpRatio = mp / maxMp;
     if (mpRatio > 0.1) {
       const handX = dir === 'left' ? px0 + T - 8 : px0 + 3;
@@ -402,9 +419,8 @@ const Sprites = (() => {
     }
   }
 
-  // Keep old drawPlayer for fallback / generic reference
-  function drawPlayer(ctx, x, y, dir, frame, shieldActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false) {
-    drawKnight(ctx, x, y, dir, frame, shieldActive, attackProgress, dashX, dashY, isRooted);
+  function drawPlayer(ctx, x, y, dir, frame, shieldActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false, flameSwordActive = false) {
+    drawKnight(ctx, x, y, dir, frame, shieldActive, attackProgress, dashX, dashY, isRooted, flameSwordActive);
   }
 
   // ── PREVIEW sprites for class select screen ───────────────
@@ -412,63 +428,57 @@ const Sprites = (() => {
     const f = frame % 4;
     const bob = f < 2 ? 0 : -1;
     // Cape
-    px(ctx, '#8b1515', x + 10, y + 14 + bob, 12, 16);
-    // Body
-    px(ctx, '#5c6e7e', x + 9, y + 15 + bob, 14, 16);
-    px(ctx, '#8ca0b0', x + H, y + 15 + bob, 4, 14);
-    // Helm
-    px(ctx, '#5c6e7e', x + 9, y + 4 + bob, 14, 13);
-    px(ctx, '#94a9bc', x + 9, y + 4 + bob, 14, 3);
-    px(ctx, '#1a1a2e', x + 12, y + 9 + bob, 8, 3);
-    px(ctx, '#ff6600', x + 13, y + 10 + bob, 3, 1);
-    px(ctx, '#ff6600', x + 17, y + 10 + bob, 3, 1);
+    px(ctx, '#6b1010', x + 9, y + 14 + bob, 14, 16);
+    // Silver Body
+    px(ctx, '#c4cdd8', x + 9, y + 15 + bob, 14, 15);
+    px(ctx, '#e2e8f0', x + H - 1, y + 15 + bob, 3, 12);
+    // Helm (no eyes)
+    px(ctx, '#c4cdd8', x + 9, y + 4 + bob, 14, 12);
+    px(ctx, '#e2e8f0', x + 10, y + 3 + bob, 12, 3);
+    px(ctx, '#1a1a2e', x + 11, y + 9 + bob, 10, 3);
+    px(ctx, '#e2e8f0', x + H - 1, y + 7 + bob, 2, 5);
     // Plume
-    px(ctx, '#ffd700', x + H - 1, y + 2 + bob, 2, 3);
+    px(ctx, '#b91c1c', x + H - 1, y + 0 + bob, 3, 4);
     // Shield
     px(ctx, '#1e3a8a', x + 3, y + 15 + bob, 7, 11);
     px(ctx, '#3b82f6', x + 4, y + 16 + bob, 5, 9);
     px(ctx, '#ffd700', x + 6, y + 16 + bob, 1, 7);
     px(ctx, '#ffd700', x + 4, y + 19 + bob, 5, 1);
-    // Sword
-    px(ctx, '#d4e0eb', x + 24, y + 10 + bob, 3, 16);
-    px(ctx, '#ffd700', x + 22, y + 19 + bob, 7, 2);
+    // Broadsword
+    px(ctx, '#cbd5e1', x + 23, y + 8 + bob, 5, 18);
+    px(ctx, '#ffffff', x + 25, y + 9 + bob, 1, 15);
+    px(ctx, '#ffd700', x + 21, y + 20 + bob, 9, 2);
   }
 
   function drawWizardPreview(ctx, x, y, frame) {
     const f = frame % 4;
     const bob = f < 2 ? 0 : -1;
-    // Robe
     px(ctx, '#2d1b55', x + 9, y + 15 + bob, 14, 17);
     px(ctx, '#3d2570', x + 10, y + 15 + bob, 4, 15);
-    // Face
     px(ctx, '#c8a87e', x + 11, y + 9 + bob, 10, 8);
-    px(ctx, '#e0e0e0', x + 11, y + 15 + bob, 10, 2); // beard
-    // Hat
+    px(ctx, '#e0e0e0', x + 11, y + 15 + bob, 10, 2);
     ctx.fillStyle = '#3d1f6e';
     ctx.beginPath();
-    ctx.moveTo(x + H, y - 2 + bob);
+    ctx.moveTo(x + H + 2, y - 2 + bob);
     ctx.lineTo(x + 22, y + 9 + bob);
     ctx.lineTo(x + 10, y + 9 + bob);
     ctx.closePath();
     ctx.fill();
     px(ctx, '#3d1f6e', x + 8, y + 7 + bob, 16, 3);
     px(ctx, '#ffd700', x + H - 1, y + 2 + bob, 2, 2);
-    // Staff
     px(ctx, '#5c3d1e', x + 24, y + 7 + bob, 3, 20);
-    // Orb
     ctx.fillStyle = 'rgba(255,100,0,0.4)';
     ctx.beginPath();
-    ctx.arc(x + 25, y + 6 + bob, 6, 0, Math.PI * 2);
+    ctx.arc(x + 25, y + 6 + bob, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ff6600';
     ctx.beginPath();
-    ctx.arc(x + 25, y + 6 + bob, 3, 0, Math.PI * 2);
+    ctx.arc(x + 25, y + 6 + bob, 4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#ffcc00';
+    ctx.fillStyle = '#fef08a';
     ctx.beginPath();
-    ctx.arc(x + 24, y + 5 + bob, 1.5, 0, Math.PI * 2);
+    ctx.arc(x + 25, y + 6 + bob, 2, 0, Math.PI * 2);
     ctx.fill();
-    // Hand glow
     ctx.fillStyle = 'rgba(255,100,0,0.5)';
     ctx.beginPath();
     ctx.arc(x + 8, y + 20 + bob, 4, 0, Math.PI * 2);
@@ -482,81 +492,117 @@ const Sprites = (() => {
     const wave = Math.sin((f / 8) * Math.PI * 2);
     const squish = wave * 2.5;
 
-    // Crawling blob shadow / pseudopod base
-    ctx.fillStyle = '#0284c7';
+    // Puddle shadow
+    ctx.fillStyle = 'rgba(2, 132, 199, 0.55)';
     ctx.beginPath();
-    ctx.ellipse(sx + H, sy + T - 6, H - 3 + squish * 0.6, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx + H, sy + T - 5, H - 2 + squish * 0.7, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Main light-blue blob body
-    ctx.fillStyle = '#5ce1e6';
+    // Translucent gel body with radial gradient
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    const grd = ctx.createRadialGradient(sx + H - 2, sy + H, 2, sx + H, sy + H + 3, H - 1);
+    grd.addColorStop(0, '#7ceff2');
+    grd.addColorStop(0.65, '#5ce1e6');
+    grd.addColorStop(1, '#2fb8bd');
+    ctx.fillStyle = grd;
     ctx.beginPath();
-    ctx.ellipse(sx + H, sy + H + 3 + squish * 0.4, H - 4 + squish * 0.5, H - 5 - squish * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx + H, sy + H + 3 + squish * 0.4, H - 3 + squish * 0.5, H - 5 - squish * 0.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Crawling side lobes
-    px(ctx, '#38bdf8', sx + 5 + Math.round(wave), sy + T - 11, 5, 5);
-    px(ctx, '#38bdf8', sx + T - 10 - Math.round(wave), sy + T - 11, 5, 5);
+    // Dripping underside teardrops
+    ctx.fillStyle = '#2fb8bd';
+    ctx.fillRect(sx + 8, sy + T - 6 + Math.round(wave), 2, 3);
+    ctx.fillRect(sx + T - 10, sy + T - 6 - Math.round(wave), 2, 3);
+    ctx.fillRect(sx + H, sy + T - 5, 2, 3);
+
+    // Internal bubbles
+    ctx.fillStyle = '#cffafe';
+    ctx.beginPath();
+    ctx.arc(sx + H - 5, sy + H + 5 - wave, 2, 0, Math.PI * 2);
+    ctx.arc(sx + H + 5, sy + H + 2 + wave, 1.5, 0, Math.PI * 2);
+    ctx.arc(sx + H + 1, sy + H + 7, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     // Eyes
-    px(ctx, '#fff', sx + H - 6, sy + H - 1, 4, 4);
-    px(ctx, '#fff', sx + H + 2, sy + H - 1, 4, 4);
-    px(ctx, '#0f172a', sx + H - 5, sy + H, 2, 2);
-    px(ctx, '#0f172a', sx + H + 3, sy + H, 2, 2);
+    px(ctx, '#fff', sx + H - 6, sy + H - 2, 4, 4);
+    px(ctx, '#fff', sx + H + 2, sy + H - 2, 4, 4);
+    px(ctx, '#0f172a', sx + H - 5, sy + H - 1, 2, 2);
+    px(ctx, '#0f172a', sx + H + 3, sy + H - 1, 2, 2);
+
+    // Angry jagged mouth slit
+    px(ctx, '#0f172a', sx + H - 4, sy + H + 4, 8, 2);
+    px(ctx, '#0f172a', sx + H - 2, sy + H + 3, 2, 1);
+    px(ctx, '#0f172a', sx + H + 1, sy + H + 3, 2, 1);
 
     // Glossy highlight
-    px(ctx, '#cffafe', sx + H - 4, sy + H - 5, 5, 2);
+    px(ctx, '#ecfeff', sx + H - 5, sy + H - 6, 5, 2);
     drawEnemyHpBar(ctx, sx, sy, hp, maxHp);
   }
 
-  function drawSkeleton(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0) {
-    const f = frame % 4;
-    const walkOff = (f < 2) ? 0 : 1;
-    const sx = x + dashX, sy = y + dashY;
-    // Skull
-    px(ctx, '#e0d8c8', sx + 9, sy + 2, T - 18, 12);
-    // Eye sockets
-    px(ctx, '#1a1a2e', sx + 11, sy + 5, 4, 4);
-    px(ctx, '#1a1a2e', sx + T - 15, sy + 5, 4, 4);
-    // Jaw
-    px(ctx, '#c8c0b0', sx + 10, sy + 12, T - 20, 4);
-    // Ribcage
-    px(ctx, '#d8d0c0', sx + 10, sy + 16, T - 20, 10);
-    for (let i = 0; i < 3; i++) {
-      px(ctx, '#1a1a28', sx + 12, sy + 17 + i * 3, T - 24, 2);
-    }
-    // Arms
-    px(ctx, '#d8d0c0', sx + 4, sy + 16, 6, 12 + walkOff);
-    px(ctx, '#d8d0c0', sx + T - 10, sy + 16, 6, 12 - walkOff);
-    // Legs
-    px(ctx, '#d8d0c0', sx + 9, sy + 26, 5, 6 - walkOff);
-    px(ctx, '#d8d0c0', sx + T - 14, sy + 26, 5, 6 + walkOff);
-    drawEnemyHpBar(ctx, sx, sy, hp, maxHp);
-  }
-
-  function drawArmoredSkeleton(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0) {
+  function drawBlackKnight(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0) {
     const f = frame % 4;
     const walkOff = (f < 2) ? 0 : 1;
     const sx = x + dashX, sy = y + dashY;
 
-    // Steel helmet + visor
-    px(ctx, '#64748b', sx + 7, sy + 1, T - 14, 13);
-    px(ctx, '#94a3b8', sx + 8, sy + 1, T - 16, 4);
-    // Glowing red eye slits
-    px(ctx, '#ef4444', sx + 10, sy + 6, 4, 3);
-    px(ctx, '#ef4444', sx + T - 14, sy + 6, 4, 3);
-    // Plate chestplate
-    px(ctx, '#475569', sx + 7, sy + 14, T - 14, 12);
-    px(ctx, '#cbd5e1', sx + 9, sy + 15, T - 18, 2);
+    // Dark red cape
+    px(ctx, '#4a0e0e', sx + 7, sy + 12, T - 14, 15);
+    // Horned black iron helmet
+    px(ctx, '#1e1e2a', sx + 8, sy + 3, T - 16, 11);
+    px(ctx, '#2d2d3e', sx + 9, sy + 3, T - 18, 3);
+    // Horns
+    px(ctx, '#111118', sx + 6, sy + 0, 3, 5);
+    px(ctx, '#111118', sx + T - 9, sy + 0, 3, 5);
+    // Glowing red visor slit
+    px(ctx, '#111118', sx + 10, sy + 7, T - 20, 3);
+    px(ctx, '#ff2222', sx + 11, sy + 8, T - 22, 1);
+    // Black iron plate body
+    px(ctx, '#1e1e2a', sx + 7, sy + 14, T - 14, 11);
+    px(ctx, '#2d2d3e', sx + 9, sy + 15, T - 18, 3);
     // Pauldrons
-    px(ctx, '#94a3b8', sx + 4, sy + 14, 5, 6);
-    px(ctx, '#94a3b8', sx + T - 9, sy + 14, 5, 6);
+    px(ctx, '#111118', sx + 4, sy + 14, 5, 6);
+    px(ctx, '#111118', sx + T - 9, sy + 14, 5, 6);
     // Greaves
-    px(ctx, '#64748b', sx + 9, sy + 26, 5, 6 - walkOff);
-    px(ctx, '#64748b', sx + T - 14, sy + 26, 5, 6 + walkOff);
-    // Longsword
-    px(ctx, '#e2e8f0', sx + T - 4, sy + 2, 3, 22);
-    px(ctx, '#ffd700', sx + T - 7, sy + 18, 9, 3);
+    px(ctx, '#1e1e2a', sx + 9, sy + 25, 5, 7 - walkOff);
+    px(ctx, '#1e1e2a', sx + T - 14, sy + 25, 5, 7 + walkOff);
+    // Dark sword
+    px(ctx, '#3a3a4e', sx + T - 4, sy + 5, 3, 19);
+    px(ctx, '#111118', sx + T - 6, sy + 18, 7, 2);
+    drawEnemyHpBar(ctx, sx, sy, hp, maxHp);
+  }
+
+  function drawDarkChampion(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0) {
+    const f = frame % 4;
+    const walkOff = (f < 2) ? 0 : 1;
+    const sx = x + dashX, sy = y + dashY;
+
+    // Dark crimson cape
+    px(ctx, '#5a0c0c', sx + 6, sy + 11, T - 12, 17);
+    // Crown-topped helmet
+    px(ctx, '#1e1e2a', sx + 7, sy + 3, T - 14, 11);
+    px(ctx, '#c4a030', sx + 9, sy + 0, 2, 3);
+    px(ctx, '#c4a030', sx + H - 1, sy - 1, 2, 4);
+    px(ctx, '#c4a030', sx + T - 11, sy + 0, 2, 3);
+    px(ctx, '#c4a030', sx + 9, sy + 2, T - 18, 2);
+    // Red visor slit
+    px(ctx, '#111118', sx + 9, sy + 7, T - 18, 3);
+    px(ctx, '#ff2222', sx + 10, sy + 8, T - 20, 2);
+    // Plate chestplate with gold trim
+    px(ctx, '#1e1e2a', sx + 6, sy + 14, T - 12, 12);
+    px(ctx, '#c4a030', sx + 7, sy + 15, T - 14, 2);
+    px(ctx, '#c4a030', sx + 7, sy + 23, T - 14, 2);
+    // Larger pauldrons with gold trim
+    px(ctx, '#2d2d3e', sx + 2, sy + 13, 6, 7);
+    px(ctx, '#2d2d3e', sx + T - 8, sy + 13, 6, 7);
+    px(ctx, '#c4a030', sx + 3, sy + 13, 4, 2);
+    px(ctx, '#c4a030', sx + T - 7, sy + 13, 4, 2);
+    // Greaves
+    px(ctx, '#1e1e2a', sx + 8, sy + 26, 6, 6 - walkOff);
+    px(ctx, '#1e1e2a', sx + T - 14, sy + 26, 6, 6 + walkOff);
+    // Greatsword
+    px(ctx, '#64748b', sx + T - 4, sy + 0, 4, 24);
+    px(ctx, '#c4a030', sx + T - 7, sy + 18, 10, 3);
     drawEnemyHpBar(ctx, sx, sy - 2, hp, maxHp, true);
   }
 
@@ -667,12 +713,19 @@ const Sprites = (() => {
   function drawGhost(ctx, x, y, frame, hp, maxHp) {
     const f = frame % 8;
     const floatY = Math.sin(f / 8 * Math.PI * 2) * 3;
-    // Body (semi-transparent)
-    ctx.fillStyle = 'rgba(155,155,207,0.75)';
+
+    // Faint white aura glow
+    const grd = ctx.createRadialGradient(x + H, y + H + floatY, 2, x + H, y + H + floatY, T * 0.7);
+    grd.addColorStop(0, 'rgba(255,255,255,0.28)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(x - 6, y - 6 + floatY, T + 12, T + 12);
+
+    // Body (semi-transparent white)
+    ctx.fillStyle = 'rgba(240,240,255,0.72)';
     ctx.beginPath();
     ctx.arc(x + H, y + H - 4 + floatY, H - 4, Math.PI, 0);
     ctx.lineTo(x + T - 4, y + H + 10 + floatY);
-    // Wavy bottom
     for (let i = 0; i < 4; i++) {
       ctx.quadraticCurveTo(
         x + T - 4 - i * (T - 8) / 4 - (T - 8) / 8,
@@ -683,53 +736,152 @@ const Sprites = (() => {
     }
     ctx.closePath();
     ctx.fill();
-    // Eyes (glowing)
-    px(ctx, '#ff4444', x + H - 5, y + H - 5 + floatY, 4, 4);
-    px(ctx, '#ff4444', x + H + 1, y + H - 5 + floatY, 4, 4);
-    px(ctx, '#ff9999', x + H - 4, y + H - 4 + floatY, 2, 2);
-    px(ctx, '#ff9999', x + H + 2, y + H - 4 + floatY, 2, 2);
+
+    // Hollow black eyes
+    px(ctx, '#0a0a0a', x + H - 6, y + H - 5 + floatY, 5, 5);
+    px(ctx, '#0a0a0a', x + H + 1, y + H - 5 + floatY, 5, 5);
     drawEnemyHpBar(ctx, x, y, hp, maxHp);
   }
 
-  function drawBoss(ctx, x, y, frame, hp, maxHp) {
+  // ── CRIMSON RIDER BOSS (5x size = ~160x160px) ──────────────
+  function drawCrimsonRider(ctx, x, y, frame, hp, maxHp, isCharging = false, isKicking = false, chargeDir = 'right', windupType = null) {
     const f = frame % 8;
     const rage = hp / maxHp < 0.4;
-    const col = rage ? '#ff0000' : '#e63946';
-    const pulseSz = Math.sin(f / 8 * Math.PI * 2) * 2;
+    const cx = x + H;
+    const cy = y + H;
+    const S = 5; // 5x scale
+
+    ctx.save();
+    // Flip horizontally if facing left
+    const facingLeft = chargeDir === 'left';
+    ctx.translate(cx, cy);
+    if (facingLeft) ctx.scale(-1, 1);
+
+    // Telegraph aura for charge or kick buildup
+    if (windupType === 'charge') {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 75, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (windupType === 'kick') {
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.28)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 78, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (rage) {
+      ctx.fillStyle = `rgba(255, 0, 0, ${0.12 + 0.08 * Math.sin(f)})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, 82, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // Shadow
-    ctx.fillStyle = 'rgba(230,57,70,0.15)';
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath();
-    ctx.ellipse(x + H, y + T - 4, H + pulseSz, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 52, 58, 16, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Body (large demon)
-    px(ctx, col, x + 4, y + 8, T - 8, T - 12);
-    // Head
-    px(ctx, '#c0202a', x + 6, y + 2, T - 12, 12);
-    // Horns
-    px(ctx, '#8b1515', x + 6, y - 4, 5, 8);
-    px(ctx, '#8b1515', x + T - 11, y - 4, 5, 8);
-    // Eyes (glowing)
-    const eyeCol = rage ? '#ffff00' : '#ff8800';
-    px(ctx, eyeCol, x + 9, y + 5, 5, 5);
-    px(ctx, eyeCol, x + T - 14, y + 5, 5, 5);
-    px(ctx, '#fff', x + 10, y + 6, 2, 2);
-    px(ctx, '#fff', x + T - 13, y + 6, 2, 2);
-    // Arms
-    px(ctx, '#b01020', x, y + 10, 8, T - 18);
-    px(ctx, '#b01020', x + T - 8, y + 10, 8, T - 18);
-    // Claws
-    for (let i = 0; i < 3; i++) {
-      px(ctx, '#800010', x + i * 3 - 1, y + T - 10 + pulseSz, 2, 6);
-      px(ctx, '#800010', x + T - 8 + i * 3, y + T - 10 + pulseSz, 2, 6);
+    // Rear up angle during charge wind-up or kick wind-up
+    const rearAngle = (windupType === 'charge' || windupType === 'kick') ? -0.18 : 0;
+    ctx.rotate(rearAngle);
+
+    const trot = Math.sin(f * 0.9) * (isCharging ? 10 : 4);
+
+    // ── WHITE HORSE (partially armored) ──
+    // Tail
+    ctx.fillStyle = '#d4d0cc';
+    ctx.fillRect(-56, -4, 16, 26);
+    // Back legs
+    ctx.fillStyle = '#d4d0cc';
+    ctx.fillRect(-40 + trot, 18, 12, 34);
+    ctx.fillRect(-24 - trot, 18, 12, 34);
+    // Front legs
+    const frontLift = (windupType === 'charge' || isKicking) ? -14 : 0;
+    ctx.fillRect(16 - trot, 18 + frontLift, 12, 34);
+    ctx.fillRect(30 + trot, 18 + frontLift, 12, 34);
+    // Hooves
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(-40 + trot, 46, 12, 6);
+    ctx.fillRect(-24 - trot, 46, 12, 6);
+    ctx.fillRect(16 - trot, 46 + frontLift, 12, 6);
+    ctx.fillRect(30 + trot, 46 + frontLift, 12, 6);
+
+    // Horse body
+    ctx.fillStyle = '#e8e0d8';
+    ctx.fillRect(-44, -10, 86, 34);
+    // Partial plate barding (chest & flank armor)
+    ctx.fillStyle = '#8a94a0';
+    ctx.fillRect(18, -10, 26, 32);
+    ctx.fillStyle = '#b0b8c4';
+    ctx.fillRect(20, -8, 22, 6);
+    // Crimson saddle cloth
+    ctx.fillStyle = '#991b1b';
+    ctx.fillRect(-24, -12, 34, 24);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-24, 9, 34, 3);
+
+    // Horse neck & head
+    ctx.fillStyle = '#e8e0d8';
+    ctx.fillRect(28, -34, 20, 30);
+    ctx.fillRect(34, -44, 30, 18);
+    // Flowing mane
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(22, -34, 8, 26);
+    // Horse head plate armor (chamfron)
+    ctx.fillStyle = '#8a94a0';
+    ctx.fillRect(42, -45, 22, 10);
+    // Horse eye
+    ctx.fillStyle = rage ? '#ff0000' : '#1e293b';
+    ctx.fillRect(50, -40, 4, 4);
+
+    // ── RED HEAVY KNIGHT RIDER ──
+    // Rider legs
+    ctx.fillStyle = '#991b1b';
+    ctx.fillRect(-10, -4, 16, 22);
+    // Heavy crimson torso
+    ctx.fillStyle = '#c0202a';
+    ctx.fillRect(-18, -42, 32, 38);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-14, -38, 24, 12);
+    // Gold trim
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(-18, -8, 32, 4);
+    // Massive pauldrons
+    ctx.fillStyle = '#991b1b';
+    ctx.fillRect(-26, -42, 12, 16);
+    ctx.fillRect(10, -42, 12, 16);
+    // Great helm
+    ctx.fillStyle = '#c0202a';
+    ctx.fillRect(-14, -66, 24, 24);
+    ctx.fillStyle = '#111118';
+    ctx.fillRect(-6, -56, 14, 5); // visor slit
+    // Plume (catches fire in rage mode)
+    ctx.fillStyle = rage ? '#ff8c00' : '#ffd700';
+    ctx.fillRect(-12, -78, 16, 12);
+    if (rage && f % 2 === 0) {
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(-10, -84, 10, 8);
     }
-    // Rage aura
-    if (rage) {
-      ctx.fillStyle = `rgba(255,0,0,${0.1 + Math.abs(Math.sin(f / 4)) * 0.15})`;
-      ctx.fillRect(x - 4, y - 4, T + 8, T + 8);
-    }
-    drawEnemyHpBar(ctx, x, y - 6, hp, maxHp, true);
+
+    // Massive Lance / Greatsword
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(10, -32, 68, 8);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(12, -30, 64, 2);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillRect(4, -38, 8, 20);
+
+    ctx.restore();
+
+    // Boss HP Bar (large, above boss)
+    const bw = 96;
+    const bx = cx - bw / 2;
+    const by = cy - 92;
+    px(ctx, '#1a1a28', bx - 1, by - 1, bw + 2, 8);
+    const pct = Math.max(0, hp / maxHp);
+    px(ctx, pct > 0.4 ? '#e63946' : '#ff0000', bx, by, Math.round(bw * pct), 6);
   }
 
   function drawEnemyHpBar(ctx, x, y, hp, maxHp, large) {
@@ -749,35 +901,6 @@ const Sprites = (() => {
     const cy = y + bob;
 
     switch (type) {
-      case C.I_COIN:
-        ctx.fillStyle = '#ffd700';
-        ctx.beginPath();
-        ctx.arc(x + H, cy + H, 7, 0, Math.PI * 2);
-        ctx.fill();
-        px(ctx, '#ffea70', x + H - 2, cy + H - 4, 2, 6);
-        ctx.strokeStyle = '#a07000';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(x + H, cy + H, 7, 0, Math.PI * 2);
-        ctx.stroke();
-        break;
-      case C.I_GEM:
-        ctx.fillStyle = '#4fa3e0';
-        ctx.beginPath();
-        ctx.moveTo(x + H, cy + 6);
-        ctx.lineTo(x + T - 7, cy + H);
-        ctx.lineTo(x + H, cy + T - 6);
-        ctx.lineTo(x + 7, cy + H);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.beginPath();
-        ctx.moveTo(x + H, cy + 6);
-        ctx.lineTo(x + T - 7, cy + H);
-        ctx.lineTo(x + H, cy + 14);
-        ctx.closePath();
-        ctx.fill();
-        break;
       case C.I_HEART:
         ctx.fillStyle = '#e63946';
         ctx.beginPath();
@@ -1007,22 +1130,11 @@ const Sprites = (() => {
     ctx.restore();
   }
 
-  // ── FOG OF WAR ─────────────────────────────────────────────
-  function drawFogTile(ctx, x, y, explored, visible) {
-    if (!explored) {
-      ctx.fillStyle = 'rgba(0,0,0,0.98)';
-      ctx.fillRect(x, y, T, T);
-    } else if (!visible) {
-      ctx.fillStyle = 'rgba(0,0,0,0.55)';
-      ctx.fillRect(x, y, T, T);
-    }
-  }
-
   return {
-    drawWall, drawFloor, drawTorch, drawDoor, drawChest, drawSavePoint, drawLoreTablet,
+    drawWall, drawFloor, drawTorch, drawDoor, drawChest, drawSavePoint,
     drawPlayer, drawKnight, drawWizard, drawKnightPreview, drawWizardPreview,
-    drawSlime, drawSkeleton, drawArmoredSkeleton, drawSpider, drawGhost, drawBoss,
-    drawItem, drawProjectile, drawSlash, drawClash, drawParticles, drawHitEffect, drawPickupEffect, drawFogTile,
+    drawSlime, drawBlackKnight, drawDarkChampion, drawSpider, drawGhost, drawCrimsonRider,
+    drawItem, drawProjectile, drawSlash, drawClash, drawParticles, drawHitEffect, drawPickupEffect,
     drawEnemyHpBar,
   };
 })();

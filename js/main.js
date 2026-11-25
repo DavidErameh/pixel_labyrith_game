@@ -344,6 +344,8 @@
     const isHidden = ov.classList.contains('hidden');
     if (isHidden) {
       game.pause();
+      expCanvas.width = Math.min(Math.floor(window.innerWidth * 0.92), 1300);
+      expCanvas.height = Math.min(Math.floor(window.innerHeight * 0.82), 560);
       game.renderExpandedMap(expCanvas);
       ov.classList.remove('hidden');
     } else {
@@ -412,10 +414,6 @@
     UI.saveProgress(game.serialize());
     Sound.save();
     UI.showToast('💾 Progress Saved!');
-  });
-  document.getElementById('btn-close-lore').addEventListener('click', () => {
-    document.getElementById('overlay-lore').classList.add('hidden');
-    if (game && game.paused) game.resume();
   });
   document.getElementById('btn-quit').addEventListener('click', () => {
     UI.hideAllOverlays();

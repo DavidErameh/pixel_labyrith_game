@@ -467,22 +467,36 @@ html, body {
 }
 #btn-pause:hover, #btn-mute:hover, #btn-map:hover { background: var(--dungeon-mid); color: var(--gold); }
 
-.map-box { max-width: 440px; padding: 1.25rem; }
+#overlay-map {
+  background: rgba(5, 5, 10, 0.88);
+  padding: 0;
+}
 #expanded-map-canvas {
-  width: 100%;
-  max-width: 372px;
-  aspect-ratio: 1;
+  width: min(92vw, 1300px);
+  height: min(82vh, 560px);
   border: 2px solid var(--gold-dim);
   background: #07070e;
   image-rendering: pixelated;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
 }
-.map-legend {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6rem;
-  font-size: 0.38rem;
-  color: var(--text-light);
+.map-floating-close {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 110;
+  font-family: var(--pixel-font);
+  font-size: 0.65rem;
+  background: rgba(20, 20, 35, 0.88);
+  border: 2px solid var(--gold-dim);
+  color: var(--gold);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.map-floating-close:hover {
+  background: var(--gold);
+  color: #0e0e18;
+  border-color: var(--gold);
 }
 
 /* ── MOBILE D-PAD ─────────────────────────────────────────── */
@@ -568,14 +582,6 @@ html, body {
 .victory-box { border-color: var(--gold); }
 .victory-box h2 { color: var(--gold); font-size: clamp(0.9rem, 3.5vw, 1.4rem); }
 .levelup-stats { display: flex; gap: 1.5rem; font-size: 0.4rem; color: var(--text-dim); }
-.lore-box { border-color: var(--purple); max-width: 440px; }
-.lore-box h2 { color: #d8b4fe; }
-#lore-text {
-  font-size: 0.46rem;
-  color: var(--text-light);
-  line-height: 2;
-  font-style: italic;
-}
 
 /* ── FLOOR INTRO BANNER ───────────────────────────────────── */
 #floor-banner {

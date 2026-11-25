@@ -84,6 +84,7 @@ class Game {
       this.player = new Player(1, 1, this.playerClass);
     } else {
       this.player.r = 1; this.player.c = 1;
+      this.player.visX = C.TILE; this.player.visY = C.TILE;
       this.player.effects = [];
       this.player.heal(2);
       if (this.player.playerClass === 'wizard') this.player.gainMp(10);
@@ -258,10 +259,22 @@ class Game {
     this._handleInput(dt);
 
     // Enemy hit handler
-    const onHitPlayer = (enemy, dmg) => {
+    const onHitPlayer = (enemy, dmg, isCharge = false, isKick = false) => {
       if (p.invincible) return;
       if (enemy.type === 'slime' || enemy.type === 'spider') Sound.squish();
       else Sound.enemySlash();
+
+      // Horse kick knockback helper
+      const applyKnockback = (tiles) => {
+        const kr = Math.sign(p.r - enemy.r);
+        const kc = Math.sign(p.c - enemy.c);
+        for (let i = 0; i < tiles; i++) {
+          const nr = p.r + kr, nc = p.c + kc;
+          if (MazeGen.isWalkable(this.grid, this.rows, this.cols, nr, nc)) {
+            p.r = nr; p.c = nc;
+          } else break;
+        }
+      };
 
       if (p.isBlocking()) {
         const res = p.absorbShieldHit();
@@ -270,6 +283,7 @@ class Game {
         const TT = C.TILE;
         p.spawnParticles(p.c * TT + TT / 2, p.r * TT + TT / 2, p.playerClass === 'wizard' ? '#93c5fd' : '#60a5fa', 10, 2.5);
         const label = p.playerClass === 'wizard' ? 'BARRIER' : 'SHIELD';
+        if (isCharge || isKick) applyKnockback(isKick ? 2 : 1);
         if (res === 'broken') {
           p.addEffect('shield', p.r, p.c, `${label} BROKE!`, p.playerClass === 'wizard' ? '#93c5fd' : '#60a5fa');
           UI.showToast(p.playerClass === 'wizard' ? '✨ Barrier broke! 6s cooldown...' : '🛡️ Shield broke! 5s cooldown...');
@@ -278,9 +292,20 @@ class Game {
         }
         return;
       }
+
+      if (isCharge) {
+        p.rootedTimer = 1500;
+        p.addEffect('web', p.r, p.c, 'STUNNED!', '#ef4444');
+        UI.showToast('🐴 Crimson Rider Charge stunned you!');
+      } else if (isKick) {
+        applyKnockback(3);
+        p.addEffect('hurt', p.r, p.c, 'KICKED!', '#facc15');
+        UI.showToast('🐴 Horse Kick knocked you back!');
+      }
+
       if (p.takeDamage(dmg)) {
         Sound.hurt();
-        this.triggerShake(5, 160);
+        this.triggerShake(isCharge || isKick ? 7 : 5, 160);
         p.addEffect('hurt', p.r, p.c, `-${dmg}`, '#ff4444');
       }
     };
@@ -436,8 +461,8 @@ class Game {
     for (const [dr, dc] of dirs) {
       const r = nearR + dr, c = nearC + dc;
       if (MazeGen.isWalkable(this.grid, this.rows, this.cols, r, c)) {
-        this.enemies.push(new Enemy('skeleton', r, c, this.floor));
-        UI.showToast('💀 Boss summoned reinforcements!');
+        this.enemies.push(new Enemy('black_knight', r, c, this.floor));
+        UI.showToast('⚔️ Crimson Rider summoned Black Knights!');
         return;
       }
     }
@@ -525,10 +550,6 @@ class Game {
     } else {
       this.lastSavedPos = null;
     }
-
-    if (this.grid[nr][nc] === C.T_LORE) {
-      this._readLoreTablet(nr, nc);
-    }
   }
 
   _activateSavePoint(r, c) {
@@ -544,17 +565,6 @@ class Game {
     UI.showToast(p.playerClass === 'wizard'
       ? '🔮 Shrine touched — Saved & +2 HP +15 MP!'
       : '🔮 Shrine touched — Saved & +2 HP!');
-  }
-
-  _readLoreTablet(r, c) {
-    const p = this.player;
-    this.grid[r][c] = C.T_FLOOR;
-    p.score += 15;
-    this.onScoreUpdate && this.onScoreUpdate(p.score);
-    Sound.unlock();
-    const frags = C.LORE_FRAGMENTS;
-    const text = frags[Math.floor(Math.random() * frags.length)];
-    this.onLore && this.onLore(text);
   }
 
   triggerShake(intensity = 4, duration = 140) {
@@ -694,9 +704,19 @@ class Game {
       }
     }
 
-    this._performSlashVisual(tr, tc, dr, dc);
+    const isFlame = p.flameSwordHits > 0;
+    this._performSlashVisual(tr, tc, dr, dc, isFlame);
     if (enemy) {
-      this._attackEnemy(enemy, p.dmg, false);
+      if (isFlame) {
+        p.flameSwordHits--;
+        const TT2 = C.TILE;
+        p.spawnParticles(enemy.c * TT2 + TT2 / 2, enemy.r * TT2 + TT2 / 2, '#ff6600', 16, 3.5);
+        this._attackEnemy(enemy, enemy.type === 'boss' ? 15 : 9999, true);
+        if (p.flameSwordHits === 0) UI.showToast('🔥 Flame Sword charges expired!');
+        else UI.showToast(`🔥 Flame Slash! (${p.flameSwordHits} left)`);
+      } else {
+        this._attackEnemy(enemy, p.dmg, false);
+      }
     } else if (this.grid[tr] && this.grid[tr][tc] === C.T_CHEST) {
       this._openChest(tr, tc);
     } else {
@@ -705,6 +725,52 @@ class Game {
   }
 
   _wizardAttack(p) {
+    // Special chest spell charges (Lightning or Light)
+    if (p.spellCharges > 0 && p.spellType) {
+      const TT = C.TILE;
+      const [dr, dc] = this._dirToDelta(p.dir);
+      p.spellCharges--;
+      if (p.spellType === 'lightning') {
+        // Chain lightning bolt in facing direction up to 6 tiles
+        let hitTarget = null;
+        for (let step = 1; step <= 6; step++) {
+          const lr = p.r + dr * step, lc = p.c + dc * step;
+          if (lr < 0 || lr >= this.rows || lc < 0 || lc >= this.cols || this.grid[lr][lc] === C.T_WALL) break;
+          p.spawnParticles(lc * TT + TT / 2, lr * TT + TT / 2, '#fde047', 6, 2.2);
+          const en = this.enemies.find(e => e.alive && e.r === lr && e.c === lc);
+          if (en) { hitTarget = en; break; }
+        }
+        this._performSlashVisual(p.r + dr, p.c + dc, dr, dc, true);
+        Sound.clash();
+        this.triggerShake(5, 140);
+        if (hitTarget) {
+          this._attackEnemy(hitTarget, hitTarget.type === 'boss' ? 18 : 9999, true);
+          p.addEffect('cast', hitTarget.r, hitTarget.c, '⚡ SMITE!', '#fde047');
+        } else {
+          p.addEffect('cast', p.r, p.c, '⚡ BOLT!', '#fde047');
+        }
+        UI.showToast(`⚡ Lightning! (${p.spellCharges} left)`);
+      } else {
+        // Light flash: damages all visible enemies
+        let hits = 0;
+        for (const e of this.enemies) {
+          if (!e.alive) continue;
+          const k = e.r * 1000 + e.c;
+          if (this.visible.has(k)) {
+            this._attackEnemy(e, e.type === 'boss' ? 14 : 9999, true);
+            hits++;
+          }
+        }
+        this._performSlashVisual(p.r, p.c, dr, dc, true);
+        Sound.parry();
+        this.triggerShake(6, 180);
+        p.addEffect('cast', p.r, p.c, '✨ RADIANCE!', '#fef08a');
+        UI.showToast(`✨ Light Flash hit ${hits}! (${p.spellCharges} left)`);
+      }
+      if (p.spellCharges === 0) p.spellType = null;
+      return;
+    }
+
     if (p.mp >= C.WIZARD_FIREBALL_COST) {
       // Cast fireball
       p.mp -= C.WIZARD_FIREBALL_COST;
@@ -785,20 +851,43 @@ class Game {
     const p = this.player;
     this.grid[r][c] = C.T_CHEST_OPEN;
     const TT = C.TILE;
-    p.spawnParticles(c * TT + TT / 2, r * TT + TT / 2, '#ffd700', 12, 2.5);
+    p.spawnParticles(c * TT + TT / 2, r * TT + TT / 2, '#ffd700', 14, 2.8);
     Sound.key();
 
     const roll = Math.random();
-    if (roll < 0.5) {
-      p.score += 50;
-      p.gemsThisFloor++;
-      p.addEffect('gem', r, c, '+50 💎', '#4fa3e0');
-      UI.showToast('🧰 Chest opened! +50 💎');
+    if (p.playerClass === 'knight') {
+      if (roll < 0.65) {
+        p.flameSwordHits = C.FLAME_SWORD_CHARGES;
+        p.addEffect('cast', r, c, '🔥 FLAME SWORD!', '#ff8c00');
+        UI.showToast(`🔥 Flame Sword! (${C.FLAME_SWORD_CHARGES} instant-kill hits)`);
+      } else {
+        p.heal(4);
+        p.addEffect('heart', r, c, '+4 HP', '#ff6b6b');
+        UI.showToast('🧰 Chest opened! ❤️ +4 HP');
+        this.onHpUpdate && this.onHpUpdate(p.hp, p.maxHp);
+      }
     } else {
-      p.heal(4);
-      p.addEffect('heart', r, c, '+4 HP', '#ff6b6b');
-      UI.showToast('🧰 Chest opened! ❤️ +4 HP');
-      this.onHpUpdate && this.onHpUpdate(p.hp, p.maxHp);
+      // Wizard chest power-ups
+      if (roll < 0.4) {
+        p.maxMp = C.WIZARD_MAX_MP * 2;
+        p.mp = p.maxMp;
+        p.manaBoostTimer = C.MANA_BOOST_DURATION;
+        p.addEffect('cast', r, c, '✨ 2× MP!', '#a78bfa');
+        UI.showToast('✨ Mana Boost! Double MP for 60s!');
+        this.onMpUpdate && this.onMpUpdate(p.mp, p.maxMp);
+      } else if (roll < 0.8) {
+        const charges = C.SPELL_CHARGES_MIN + Math.floor(Math.random() * (C.SPELL_CHARGES_MAX - C.SPELL_CHARGES_MIN + 1));
+        p.spellCharges = charges;
+        p.spellType = Math.random() < 0.5 ? 'lightning' : 'light';
+        const label = p.spellType === 'lightning' ? '⚡ LIGHTNING' : '✨ LIGHT FLASH';
+        p.addEffect('cast', r, c, `${label} (${charges})`, '#fde047');
+        UI.showToast(`🧰 Found ${label} (${charges} instant-kill casts)!`);
+      } else {
+        p.heal(4);
+        p.addEffect('heart', r, c, '+4 HP', '#ff6b6b');
+        UI.showToast('🧰 Chest opened! ❤️ +4 HP');
+        this.onHpUpdate && this.onHpUpdate(p.hp, p.maxHp);
+      }
     }
     this.onScoreUpdate && this.onScoreUpdate(p.score);
   }
@@ -834,16 +923,15 @@ class Game {
 
       // ── Potion drops ────────────────────────────────────────
       if (enemy.type === 'boss') {
-        // Final boss: guaranteed large potion + gem + heart
+        UI.showToast('👑 CRIMSON RIDER DEFEATED!');
         this.items.push(new Item(C.I_POTION_LARGE, enemy.r, enemy.c));
-        this.items.push(new Item(C.I_GEM, enemy.r, enemy.c));
         this.items.push(new Item(C.I_HEART, enemy.r, enemy.c - 1));
-      } else if (enemy.type === 'armored_skeleton' || enemy.type === 'spider') {
+      } else if (enemy.type === 'dark_champion' || enemy.type === 'spider') {
         // Mini-bosses: always drop large potion (+5 HP)
         this.items.push(new Item(C.I_POTION_LARGE, enemy.r, enemy.c));
-        UI.showToast('💊 Large Potion dropped! (+5 HP)');
+        UI.showToast('🍶 Large Potion dropped! (+5 HP)');
       } else {
-        // Regular enemies: 28% chance of small potion (+1 or +2 HP)
+        // Regular enemies: 28% chance of small potion (+2 HP)
         if (Math.random() < 0.28) {
           this.items.push(new Item(C.I_POTION, enemy.r, enemy.c));
         }
@@ -883,19 +971,6 @@ class Game {
     item.collected = true;
 
     switch (item.type) {
-      case C.I_COIN:
-        p.score += C.SCORE.coin;
-        p.addEffect('coin', item.r, item.c);
-        Sound.pickup();
-        UI.showToast(`+${C.SCORE.coin} 💰`);
-        break;
-      case C.I_GEM:
-        p.score += C.SCORE.gem;
-        p.gemsThisFloor++;
-        p.addEffect('gem', item.r, item.c);
-        Sound.pickup();
-        UI.showToast(`+${C.SCORE.gem} 💎`);
-        break;
       case C.I_HEART:
         p.heal(3);
         p.addEffect('heart', item.r, item.c);
@@ -983,7 +1058,6 @@ class Game {
           case C.T_CHEST:      Sprites.drawChest(ctx, wx, wy, false); break;
           case C.T_CHEST_OPEN: Sprites.drawChest(ctx, wx, wy, true); break;
           case C.T_SAVEPOINT:  Sprites.drawSavePoint(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
-          case C.T_LORE:       Sprites.drawLoreTablet(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
           default: Sprites.drawFloor(ctx, wx, wy);
         }
 
@@ -1012,7 +1086,8 @@ class Game {
       if (!e.alive) return;
       const k = e.r * 1000 + e.c;
       if (!this.visible.has(k)) return;
-      const ex = e.c * TT, ey = e.r * TT;
+      const ex = e.visX != null ? e.visX : e.c * TT;
+      const ey = e.visY != null ? e.visY : e.r * TT;
       let edx = 0, edy = 0;
       if (e.attackDash) {
         const dp = Math.sin((e.attackDash.timer / e.attackDash.duration) * Math.PI);
@@ -1020,12 +1095,16 @@ class Game {
         edy = e.attackDash.dr * dp * 14;
       }
       switch (e.type) {
-        case 'slime':            Sprites.drawSlime(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
-        case 'skeleton':         Sprites.drawSkeleton(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
-        case 'armored_skeleton': Sprites.drawArmoredSkeleton(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
-        case 'spider':           Sprites.drawSpider(ctx, ex, ey, e.frame, e.hp, e.maxHp, e.stunTimer > 500, edx, edy); break;
-        case 'ghost':            Sprites.drawGhost(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp); break;
-        case 'boss':             Sprites.drawBoss(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp); break;
+        case 'slime':          Sprites.drawSlime(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
+        case 'black_knight':   Sprites.drawBlackKnight(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
+        case 'dark_champion':  Sprites.drawDarkChampion(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
+        case 'spider':         Sprites.drawSpider(ctx, ex, ey, e.frame, e.hp, e.maxHp, e.stunTimer > 500, edx, edy); break;
+        case 'ghost':          Sprites.drawGhost(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp); break;
+        case 'boss': {
+          const windup = e.chargeWindup > 0 ? 'charge' : (e.kickWindup > 0 ? 'kick' : null);
+          Sprites.drawCrimsonRider(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp, e.isCharging, e.isKicking, e.chargeDir, windup);
+          break;
+        }
       }
       if (e.hitFlashTimer > 0) {
         ctx.fillStyle = `rgba(255,255,255,${Math.min(0.75, e.hitFlashTimer / 150)})`;
@@ -1041,7 +1120,8 @@ class Game {
 
     // ── Draw Player ──
     if (p) {
-      const px2 = p.c * TT, py2 = p.r * TT;
+      const px2 = p.visX != null ? p.visX : p.c * TT;
+      const py2 = p.visY != null ? p.visY : p.r * TT;
       let pdx = 0, pdy = 0;
       if (p.attackDash) {
         const dp = Math.sin((p.attackDash.timer / p.attackDash.duration) * Math.PI);
@@ -1053,7 +1133,7 @@ class Game {
         if (p.playerClass === 'wizard') {
           Sprites.drawWizard(ctx, px2, py2, p.dir, p.frame, p.barrierActive, atkProg, pdx, pdy, p.rootedTimer > 0, p.mp, p.maxMp);
         } else {
-          Sprites.drawKnight(ctx, px2, py2, p.dir, p.frame, p.shieldActive, atkProg, pdx, pdy, p.rootedTimer > 0);
+          Sprites.drawKnight(ctx, px2, py2, p.dir, p.frame, p.shieldActive, atkProg, pdx, pdy, p.rootedTimer > 0, p.flameSwordHits > 0);
         }
       }
 
@@ -1154,7 +1234,6 @@ class Game {
         if (tile === C.T_WALL) mc.fillStyle = isVis ? '#1e1e32' : '#121222';
         else if (tile === C.T_DOOR || tile === C.T_OPEN) mc.fillStyle = '#2dc653';
         else if (tile === C.T_SAVEPOINT) mc.fillStyle = '#c084fc';
-        else if (tile === C.T_LORE) mc.fillStyle = '#facc15';
         else if (tile === C.T_CHEST) mc.fillStyle = '#b45309';
         else mc.fillStyle = isVis ? '#433b63' : '#2a2442';
         mc.fillRect(c * tw, r * th, Math.ceil(tw), Math.ceil(th));
@@ -1176,7 +1255,7 @@ class Game {
       if (!e.alive) return;
       const k = e.r * 1000 + e.c;
       if (!this.visible.has(k)) return;
-      mc.fillStyle = (e.type === 'boss' || e.type === 'armored_skeleton' || e.type === 'spider') ? '#ff2244' : '#fb7185';
+      mc.fillStyle = (e.type === 'boss' || e.type === 'dark_champion' || e.type === 'spider') ? '#ff2244' : '#fb7185';
       mc.fillRect(e.c * tw + tw * 0.15, e.r * th + th * 0.15, tw * 0.7, th * 0.7);
     });
 
@@ -1198,8 +1277,10 @@ class Game {
     const viewH = this.canvas.height / zoom;
     const mapW = this.cols * TT;
     const mapH = this.rows * TT;
-    const targetX = p.c * TT - viewW / 2 + TT / 2;
-    const targetY = p.r * TT - viewH / 2 + TT / 2;
+    const px = p.visX != null ? p.visX : p.c * TT;
+    const py = p.visY != null ? p.visY : p.r * TT;
+    const targetX = px - viewW / 2 + TT / 2;
+    const targetY = py - viewH / 2 + TT / 2;
 
     this.camX = mapW <= viewW ? (mapW - viewW) / 2 : Math.max(0, Math.min(targetX, mapW - viewW));
     this.camY = mapH <= viewH ? (mapH - viewH) / 2 : Math.max(0, Math.min(targetY, mapH - viewH));

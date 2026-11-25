@@ -44,9 +44,9 @@
           </div>
           <h3 class="class-name knight-name">⚔️ KNIGHT</h3>
           <div class="class-stats">
-            <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val knight-col">14 ❤️❤️❤️</span></div>
+            <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val knight-col">15 ❤️❤️❤️</span></div>
             <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val">Close-range sword</span></div>
-            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val knight-col">Hold SHIFT = Shield</span></div>
+            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val knight-col">Hold SHIFT = Shield (5 hits)</span></div>
             <div class="stat-row"><span class="stat-label">MP</span><span class="stat-val dim-col">None</span></div>
           </div>
           <p class="class-quote">"The vaults answer to steel."</p>
@@ -151,7 +151,7 @@
         </div>
         <div id="hud-shield">
           <span id="shield-icon">🛡️</span>
-          <span id="shield-status">READY (3/3)</span>
+          <span id="shield-status">READY (5/5)</span>
         </div>
       </div>
       <div id="hud-center">
@@ -202,27 +202,9 @@
     <div id="floor-banner-text"></div>
   </div>
 
-  <div id="overlay-lore" class="overlay hidden">
-    <div class="overlay-box lore-box">
-      <h2>📜 ANCIENT TABLET</h2>
-      <p id="lore-text"></p>
-      <button class="menu-btn" id="btn-close-lore">CONTINUE</button>
-    </div>
-  </div>
-
   <div id="overlay-map" class="overlay hidden">
-    <div class="overlay-box map-box">
-      <h2>🗺️ DUNGEON MAP</h2>
-      <canvas id="expanded-map-canvas" width="372" height="372"></canvas>
-      <div class="map-legend">
-        <span>🟦 You</span>
-        <span>🟪 Shrine</span>
-        <span>🟨 Lore</span>
-        <span>🟩 Exit</span>
-        <span>🟥 Enemy</span>
-      </div>
-      <button class="menu-btn" id="btn-close-map">CLOSE (M)</button>
-    </div>
+    <canvas id="expanded-map-canvas" width="1260" height="560"></canvas>
+    <button id="btn-close-map" class="map-floating-close" title="Close Map (M)">✕ (M)</button>
   </div>
 
   <div id="overlay-pause" class="overlay hidden">

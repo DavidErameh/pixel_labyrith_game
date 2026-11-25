@@ -95,17 +95,28 @@ const MazeGen = (() => {
       attempts++;
     }
 
-    // Place 1-2 Lore Tablets
-    let loreCount = 0;
-    attempts = 0;
-    while (loreCount < 2 && attempts < 400) {
-      const r = 1 + Math.floor(Math.random() * (rows - 2));
-      const c = 1 + Math.floor(Math.random() * (cols - 2));
-      if (grid[r][c] === C.T_FLOOR && !(r === 1 && c === 1)) {
-        grid[r][c] = C.T_LORE;
-        loreCount++;
+    // Floor 5: Carve spacious 11x11 Boss Arena in center
+    if (floor === 5) {
+      const centerR = Math.floor(rows / 2);
+      const centerC = Math.floor(cols / 2);
+      const arenaHalf = 5; // 11x11 open arena
+      for (let r = centerR - arenaHalf; r <= centerR + arenaHalf; r++) {
+        for (let c = centerC - arenaHalf; c <= centerC + arenaHalf; c++) {
+          if (r > 0 && r < rows - 1 && c > 0 && c < cols - 1) {
+            grid[r][c] = C.T_FLOOR;
+          }
+        }
       }
-      attempts++;
+      // Corner pillars for cover
+      const pillars = [
+        [centerR - 3, centerC - 3], [centerR - 3, centerC + 3],
+        [centerR + 3, centerC - 3], [centerR + 3, centerC + 3],
+      ];
+      pillars.forEach(([pr, pc]) => {
+        if (pr > 0 && pr < rows - 1 && pc > 0 && pc < cols - 1) {
+          grid[pr][pc] = C.T_WALL;
+        }
+      });
     }
 
     return grid;
@@ -147,7 +158,7 @@ const MazeGen = (() => {
     if (r < 0 || r >= rows || c < 0 || c >= cols) return false;
     const t = grid[r][c];
     return t === C.T_FLOOR || t === C.T_TORCH || t === C.T_DOOR || t === C.T_OPEN ||
-           t === C.T_CHEST_OPEN || t === C.T_SAVEPOINT || t === C.T_LORE;
+           t === C.T_CHEST_OPEN || t === C.T_SAVEPOINT;
   }
 
   /**

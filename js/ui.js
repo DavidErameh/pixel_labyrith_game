@@ -275,37 +275,52 @@ const UI = (() => {
   }
 
   // ── Class Select animated preview canvas ─────────────────
+  let previewAnimId = null;
   function animateClassSelectPreviews() {
+    if (previewAnimId) {
+      cancelAnimationFrame(previewAnimId);
+      previewAnimId = null;
+    }
     const knightCanvas = document.getElementById('knight-preview-canvas');
     const wizardCanvas = document.getElementById('wizard-preview-canvas');
     if (!knightCanvas || !wizardCanvas) return;
 
-    let frame = 0;
+    const kw = knightCanvas.offsetWidth || 80;
+    const kh = knightCanvas.offsetHeight || 80;
+    knightCanvas.width = kw;
+    knightCanvas.height = kh;
+    const ww = wizardCanvas.offsetWidth || 80;
+    const wh = wizardCanvas.offsetHeight || 80;
+    wizardCanvas.width = ww;
+    wizardCanvas.height = wh;
+
+    let tick = 0;
     function loop() {
-      // Knight preview
-      knightCanvas.width = knightCanvas.offsetWidth || 80;
-      knightCanvas.height = knightCanvas.offsetHeight || 80;
+      const screen = document.getElementById('screen-classselect');
+      if (!screen || !screen.classList.contains('active')) {
+        previewAnimId = null;
+        return;
+      }
+
+      // Gentle breathing animation (~1.5 cycles/sec instead of 15Hz shaking)
+      const slowFrame = Math.floor(tick / 22);
+
       const kctx = knightCanvas.getContext('2d');
-      kctx.clearRect(0, 0, knightCanvas.width, knightCanvas.height);
-      const kScale = knightCanvas.width / 32;
+      kctx.clearRect(0, 0, kw, kh);
       kctx.save();
-      kctx.scale(kScale, kScale);
-      Sprites.drawKnightPreview(kctx, 0, 0, frame);
+      kctx.scale(kw / 32, kw / 32);
+      Sprites.drawKnightPreview(kctx, 0, 0, slowFrame);
       kctx.restore();
 
-      // Wizard preview
-      wizardCanvas.width = wizardCanvas.offsetWidth || 80;
-      wizardCanvas.height = wizardCanvas.offsetHeight || 80;
       const wctx = wizardCanvas.getContext('2d');
-      wctx.clearRect(0, 0, wizardCanvas.width, wizardCanvas.height);
-      const wScale = wizardCanvas.width / 32;
+      wctx.clearRect(0, 0, ww, wh);
       wctx.save();
-      wctx.scale(wScale, wScale);
-      Sprites.drawWizardPreview(wctx, 0, 0, frame);
+      wctx.scale(ww / 32, ww / 32);
+      Sprites.drawWizardPreview(wctx, 0, 0, slowFrame);
       wctx.restore();
 
-      frame++;
-      requestAnimationFrame(loop);
+      tick++;
+      previewAnimId = requestAnimationFrame(loop);
     }
     loop();
   }

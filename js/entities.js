@@ -6,6 +6,8 @@
 class Player {
   constructor(r, c, playerClass = 'knight') {
     this.r = r; this.c = c;
+    this.visX = c * C.TILE;
+    this.visY = r * C.TILE;
     this.playerClass = playerClass;
 
     // HP — class dependent
@@ -19,7 +21,7 @@ class Player {
 
     this.keys = 0;
     this.score = 0;
-    this.kills = { slime: 0, skeleton: 0, ghost: 0, boss: 0 };
+    this.kills = { slime: 0, black_knight: 0, ghost: 0, dark_champion: 0, spider: 0, boss: 0 };
     this.frame = 0;
     this.animTimer = 0;
     this.moveDelay = C.PLAYER_MOVE_DELAY;
@@ -60,6 +62,12 @@ class Player {
 
     // Fire Burst cooldown (wizard only)
     this.fireBurstCooldown = 0;
+
+    // Chest Power-ups
+    this.flameSwordHits = 0;   // Knight: 6 instant-kill flame hits
+    this.manaBoostTimer = 0;   // Wizard: double MP for 60s
+    this.spellCharges   = 0;   // Wizard: 5-7 instant-kill lightning/light charges
+    this.spellType      = null; // 'lightning' | 'light'
   }
 
   get dmg() {
@@ -71,6 +79,15 @@ class Player {
   update(dt) {
     this.animTimer += dt;
     if (this.animTimer > 150) { this.frame++; this.animTimer = 0; }
+
+    // Smooth visual interpolation between tiles
+    const targetX = this.c * C.TILE;
+    const targetY = this.r * C.TILE;
+    const lerp = 1 - Math.exp(-20 * dt / 1000);
+    this.visX += (targetX - this.visX) * lerp;
+    this.visY += (targetY - this.visY) * lerp;
+    if (Math.abs(targetX - this.visX) < 0.3) this.visX = targetX;
+    if (Math.abs(targetY - this.visY) < 0.3) this.visY = targetY;
 
     if (this.invincible) {
       this.invincibleTimer -= dt;
@@ -114,6 +131,15 @@ class Player {
       while (this.mpRegenAccum >= regenMs) {
         this.mpRegenAccum -= regenMs;
         if (this.mp < this.maxMp) this.mp = Math.min(this.maxMp, this.mp + 1);
+      }
+
+      // Mana boost countdown
+      if (this.manaBoostTimer > 0) {
+        this.manaBoostTimer = Math.max(0, this.manaBoostTimer - dt);
+        if (this.manaBoostTimer <= 0) {
+          this.maxMp = C.WIZARD_MAX_MP;
+          this.mp = Math.min(this.mp, this.maxMp);
+        }
       }
     }
 
@@ -253,6 +279,8 @@ class Enemy {
   constructor(type, r, c, floor) {
     this.type = type;
     this.r = r; this.c = c;
+    this.visX = c * C.TILE;
+    this.visY = r * C.TILE;
     this.alive = true;
     this.frame = 0;
     this.animTimer = 0;
@@ -280,6 +308,15 @@ class Enemy {
     if (!this.alive) return;
     this.animTimer += dt;
     if (this.animTimer > 120) { this.frame++; this.animTimer = 0; }
+
+    // Smooth visual interpolation between tiles
+    const targetX = this.c * C.TILE;
+    const targetY = this.r * C.TILE;
+    const lerp = 1 - Math.exp(-18 * dt / 1000);
+    this.visX += (targetX - this.visX) * lerp;
+    this.visY += (targetY - this.visY) * lerp;
+    if (Math.abs(targetX - this.visX) < 0.3) this.visX = targetX;
+    if (Math.abs(targetY - this.visY) < 0.3) this.visY = targetY;
 
     if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);
@@ -427,35 +464,163 @@ class Projectile {
   get c() { return Math.floor(this.x / C.TILE); }
 }
 
-// ── BOSS (special behavior) ─────────────────────────────────
-class Boss extends Enemy {
+// ── CRIMSON RIDER BOSS (Floor 5) ───────────────────────────
+class CrimsonRider extends Enemy {
   constructor(r, c, floor) {
     super('boss', r, c, floor);
+    this.maxHp = C.ENEMIES.boss.hp;
+    this.hp = this.maxHp;
+    this.dmg = C.ENEMIES.boss.dmg;
     this.phase = 1;
-    this.specialCooldown = 0;
     this.aggroRange = 999;
     this.isAggro = true;
-    this.moveInterval = 650;
+    this.moveInterval = 800;
+
+    this.isCharging = false;
+    this.chargeDir = 'right';
+    this.chargeTimer = 0;
+    this.chargeWindup = 0;
+    this.chargeCooldown = 2500;
+
+    this.isKicking = false;
+    this.kickTimer = 0;
+    this.kickWindup = 0;
+    this.kickCooldown = 3000;
+
+    this.specialCooldown = 2500;
+    this.minionsSummoned = false;
+    this.sizeInTiles = 5;
   }
 
   update(dt, player, grid, rows, cols, spawnCallback, onHitPlayer) {
     if (!this.alive) return;
+    this.animTimer += dt;
+    if (this.animTimer > 120) { this.frame++; this.animTimer = 0; }
+    if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+    if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    if (this.stunTimer > 0) { this.stunTimer -= dt; return; }
 
     if (this.phase === 1 && this.hp / this.maxHp < 0.4) {
       this.phase = 2;
-      this.moveInterval = 420;
-      this.dmg += 1;
+      this.moveInterval = 550;
+      this.dmg += 2;
+      if (!this.minionsSummoned && spawnCallback) {
+        spawnCallback(this.r, this.c);
+        spawnCallback(this.r, this.c);
+        this.minionsSummoned = true;
+      }
     }
 
-    this.specialCooldown -= dt;
-    if (this.specialCooldown <= 0 && this.phase === 2) {
-      this.specialCooldown = 5000;
-      if (spawnCallback) spawnCallback(this.r, this.c);
+    if (this.chargeCooldown > 0) this.chargeCooldown = Math.max(0, this.chargeCooldown - dt);
+    if (this.kickCooldown > 0) this.kickCooldown = Math.max(0, this.kickCooldown - dt);
+    this.specialCooldown = Math.max(0, this.specialCooldown - dt);
+
+    // Charge windup
+    if (this.chargeWindup > 0) {
+      this.chargeWindup -= dt;
+      if (this.chargeWindup <= 0) {
+        this.isCharging = true;
+        this.chargeTimer = 1100;
+      }
+      return;
     }
 
-    super.update(dt, player, grid, rows, cols, onHitPlayer);
+    // Active charge
+    if (this.isCharging) {
+      this.chargeTimer -= dt;
+      this.moveTimer += dt;
+      if (this.moveTimer >= 80) {
+        this.moveTimer = 0;
+        const [dr, dc] = this._chargeDelta();
+        const nr = this.r + dr, nc = this.c + dc;
+        if (MazeGen.isWalkable(grid, rows, cols, nr, nc)) {
+          this.r = nr; this.c = nc;
+          const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
+          if (dist <= 2 && onHitPlayer) {
+            onHitPlayer(this, this.dmg, true, false); // isCharge = true
+          }
+        } else {
+          this.isCharging = false;
+        }
+      }
+      if (this.chargeTimer <= 0) {
+        this.isCharging = false;
+        this.chargeCooldown = this.phase === 2 ? 3000 : 5000;
+      }
+      return;
+    }
+
+    // Kick windup (1s telegraph)
+    if (this.kickWindup > 0) {
+      this.kickWindup -= dt;
+      if (this.kickWindup <= 0) {
+        this.isKicking = true;
+        this.kickTimer = 300;
+        const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
+        if (dist <= 3 && onHitPlayer) {
+          onHitPlayer(this, 4, false, true); // isKick = true
+        }
+      }
+      return;
+    }
+
+    if (this.isKicking) {
+      this.kickTimer -= dt;
+      if (this.kickTimer <= 0) {
+        this.isKicking = false;
+        this.kickCooldown = 5500;
+      }
+      return;
+    }
+
+    const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
+
+    // Random charge when player is 4+ tiles away
+    if (this.chargeCooldown <= 0 && dist >= 4 && this.specialCooldown <= 0) {
+      const dr = player.r - this.r;
+      const dc = player.c - this.c;
+      if (Math.abs(dc) >= Math.abs(dr)) {
+        this.chargeDir = dc > 0 ? 'right' : 'left';
+      } else {
+        this.chargeDir = dr > 0 ? 'down' : 'up';
+      }
+      this.chargeWindup = 800;
+      this.specialCooldown = 2000;
+      return;
+    }
+
+    // Telegraphed horse kick when player is close
+    if (this.kickCooldown <= 0 && dist <= 3 && Math.random() < 0.35) {
+      this.kickWindup = 1000;
+      return;
+    }
+
+    // Normal walk
+    this.moveTimer += dt;
+    if (this.moveTimer < this.moveInterval) return;
+    this.moveTimer = 0;
+
+    if (dist <= 2) {
+      this.strikePlayer(player, onHitPlayer);
+      return;
+    }
+
+    this._chasePlayer(player, grid, rows, cols);
+  }
+
+  _chargeDelta() {
+    switch (this.chargeDir) {
+      case 'up': return [-1, 0];
+      case 'down': return [1, 0];
+      case 'left': return [0, -1];
+      case 'right': return [0, 1];
+      default: return [0, 1];
+    }
   }
 }
+
+// ── BOSS (legacy alias) ────────────────────────────────────
+class Boss extends CrimsonRider {}
 
 // ── ITEM ───────────────────────────────────────────────────
 class Item {
@@ -482,8 +647,10 @@ const EntityFactory = {
     const enemies = [];
 
     if (bossFloor) {
-      const bossPos = positions[Math.floor(positions.length / 2)];
-      enemies.push(new Boss(bossPos.r, bossPos.c, floor));
+      const centerR = Math.floor(rows / 2);
+      const centerC = Math.floor(cols / 2);
+      enemies.push(new CrimsonRider(centerR, centerC, floor));
+      return enemies; // Floor 5 is a dedicated Boss Arena
     }
 
     for (let r = 1; r < rows - 1; r++) {
@@ -494,17 +661,17 @@ const EntityFactory = {
             .filter(p => !enemies.some(e => e.r === p.r && e.c === p.c));
           if (near.length > 0) {
             const mp = near[Math.floor(Math.random() * near.length)];
-            const miniType = (floor % 2 === 1) ? 'armored_skeleton' : 'spider';
+            const miniType = (floor % 2 === 1) ? 'dark_champion' : 'spider';
             if (miniType === 'spider') enemies.push(new Spider(mp.r, mp.c, floor));
-            else enemies.push(new Enemy('armored_skeleton', mp.r, mp.c, floor));
+            else enemies.push(new Enemy('dark_champion', mp.r, mp.c, floor));
           }
         }
       }
     }
 
     const types = floor < 3
-      ? ['slime','slime','skeleton']
-      : ['slime','skeleton','ghost','skeleton'];
+      ? ['slime','slime','black_knight']
+      : ['slime','black_knight','ghost','black_knight'];
 
     const shuffled = shuffle([...positions]).slice(0, count);
     shuffled.forEach(pos => {
@@ -530,14 +697,9 @@ const EntityFactory = {
     const keyPos = shuffled.shift();
     if (keyPos) items.push(new Item(C.I_KEY, keyPos.r, keyPos.c));
 
-    const loot = shuffled.slice(0, 10 + floor * 2);
+    const loot = shuffled.slice(0, 4 + floor);
     loot.forEach(pos => {
-      const roll = Math.random();
-      let type;
-      if (roll < 0.45) type = C.I_COIN;
-      else if (roll < 0.72) type = C.I_GEM;
-      else type = C.I_HEART;
-      items.push(new Item(type, pos.r, pos.c));
+      items.push(new Item(C.I_HEART, pos.r, pos.c));
     });
 
     return items;
