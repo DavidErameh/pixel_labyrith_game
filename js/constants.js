@@ -28,11 +28,13 @@ const C = {
   E_SPIDER:           'spider',
   E_BOSS:             'boss',
 
-  // Item types (power-ups removed — only hearts, coins, gems, keys)
-  I_COIN:   'coin',
-  I_GEM:    'gem',
-  I_HEART:  'heart',
-  I_KEY:    'key',
+  // Item types
+  I_COIN:         'coin',
+  I_GEM:          'gem',
+  I_HEART:        'heart',
+  I_KEY:          'key',
+  I_POTION:       'potion',       // +2 HP — dropped by regular enemies
+  I_POTION_LARGE: 'potion_large', // +5 HP — dropped by armored_skeleton & spider
 
   // Colors (canvas draw)
   COL: {

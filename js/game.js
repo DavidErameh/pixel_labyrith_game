@@ -715,7 +715,7 @@ class Game {
       const fbDmg = 4; // wizard fireball does 4 dmg
       this.projectiles.push(new Projectile('fireball', p.r + dr, p.c + dc, speedX, speedY, fbDmg, p));
       this._performSlashVisual(p.r + dr, p.c + dc, dr, dc, true);
-      Sound.swing(); // repurpose as cast sound
+      Sound.fireball(); // fireball whoosh cast
       p.addEffect('cast', p.r, p.c, '🔥', '#ffa500');
     } else {
       // Weak staff melee
@@ -810,6 +810,9 @@ class Game {
     const cx = enemy.c * TT + TT / 2;
     const cy = enemy.r * TT + TT / 2;
 
+    // Sword whoosh / cast sound on every attack (before impact)
+    if (!isFire) Sound.swing();
+
     p.addEffect('hit', enemy.r, enemy.c, `-${dmg}`, '#ffffff');
     p.spawnParticles(cx, cy, isFire ? '#ff8c00' : '#ffd700', 8, 2.6);
     p.clashes.push({
@@ -829,10 +832,21 @@ class Game {
       p.gainMp(C.WIZARD_MP_REGEN_KILL);
       this.onScoreUpdate && this.onScoreUpdate(p.score);
 
+      // ── Potion drops ────────────────────────────────────────
       if (enemy.type === 'boss') {
-        UI.showToast('👑 MALAKOR DEFEATED!');
+        // Final boss: guaranteed large potion + gem + heart
+        this.items.push(new Item(C.I_POTION_LARGE, enemy.r, enemy.c));
         this.items.push(new Item(C.I_GEM, enemy.r, enemy.c));
         this.items.push(new Item(C.I_HEART, enemy.r, enemy.c - 1));
+      } else if (enemy.type === 'armored_skeleton' || enemy.type === 'spider') {
+        // Mini-bosses: always drop large potion (+5 HP)
+        this.items.push(new Item(C.I_POTION_LARGE, enemy.r, enemy.c));
+        UI.showToast('💊 Large Potion dropped! (+5 HP)');
+      } else {
+        // Regular enemies: 28% chance of small potion (+1 or +2 HP)
+        if (Math.random() < 0.28) {
+          this.items.push(new Item(C.I_POTION, enemy.r, enemy.c));
+        }
       }
     } else {
       Sound.clash();
@@ -895,6 +909,20 @@ class Game {
         UI.showToast('🗝️ Key obtained!');
         this.onKeysUpdate && this.onKeysUpdate(p.keys);
         break;
+      case C.I_POTION:
+        p.heal(2);
+        p.addEffect('heart', item.r, item.c, '+2 HP', '#ff9b6b');
+        Sound.potion();
+        UI.showToast('💊 Potion! +2 HP');
+        this.onHpUpdate && this.onHpUpdate(p.hp, p.maxHp);
+        break;
+      case C.I_POTION_LARGE:
+        p.heal(5);
+        p.addEffect('heart', item.r, item.c, '+5 HP', '#ff6b6b');
+        Sound.potion();
+        UI.showToast('🍶 Large Potion! +5 HP');
+        this.onHpUpdate && this.onHpUpdate(p.hp, p.maxHp);
+        break;
     }
     this.onScoreUpdate && this.onScoreUpdate(p.score);
   }
@@ -936,28 +964,37 @@ class Game {
     ctx.translate(-this.camX + shakeX, -this.camY + shakeY);
 
     // ── Draw Tiles ──
+    // Full dungeon always visible — no hidden fog in main view.
+    // Minimap keeps its own discovery fog separately.
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
         const wx = c * TT, wy = r * TT;
         const k = r * 1000 + c;
         const isVis = this.visible.has(k);
         const isExp = this.explored.has(k);
-        if (!isExp) continue;
 
         const tile = this.grid[r][c];
         switch (tile) {
           case C.T_WALL:       Sprites.drawWall(ctx, wx, wy); break;
           case C.T_FLOOR:      Sprites.drawFloor(ctx, wx, wy); break;
-          case C.T_TORCH:      Sprites.drawTorch(ctx, wx, wy, this.globalFrame); break;
+          case C.T_TORCH:      Sprites.drawTorch(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
           case C.T_DOOR:       Sprites.drawDoor(ctx, wx, wy, true); break;
           case C.T_OPEN:       Sprites.drawDoor(ctx, wx, wy, false); break;
           case C.T_CHEST:      Sprites.drawChest(ctx, wx, wy, false); break;
           case C.T_CHEST_OPEN: Sprites.drawChest(ctx, wx, wy, true); break;
-          case C.T_SAVEPOINT:  Sprites.drawSavePoint(ctx, wx, wy, this.globalFrame); break;
-          case C.T_LORE:       Sprites.drawLoreTablet(ctx, wx, wy, this.globalFrame); break;
+          case C.T_SAVEPOINT:  Sprites.drawSavePoint(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
+          case C.T_LORE:       Sprites.drawLoreTablet(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
           default: Sprites.drawFloor(ctx, wx, wy);
         }
-        Sprites.drawFogTile(ctx, wx, wy, isExp, isVis);
+
+        // Soft darkness on areas not currently in line-of-sight
+        // (not fully black — dungeon structure always readable)
+        if (!isVis) {
+          ctx.fillStyle = isExp
+            ? 'rgba(0,0,0,0.42)'   // explored but not in current vision: subtle dim
+            : 'rgba(0,0,0,0.70)';  // never visited: darker, but dungeon still visible
+          ctx.fillRect(wx, wy, TT, TT);
+        }
       }
     }
 
@@ -965,7 +1002,8 @@ class Game {
     this.items.forEach(item => {
       if (item.collected) return;
       const k = item.r * 1000 + item.c;
-      if (!this.visible.has(k)) return;
+      // Show items in explored areas so player can spot drops from afar
+      if (!this.explored.has(k)) return;
       Sprites.drawItem(ctx, item.c * TT, item.r * TT, item.type, item.frame);
     });
 
@@ -1078,7 +1116,8 @@ class Game {
       if (i.collected) return;
       const k = i.r * 1000 + i.c;
       if (!this.explored.has(k)) return;
-      mc.fillStyle = i.type === C.I_KEY ? '#ffd700' : C.COL.MINIMAP_ITEM;
+      mc.fillStyle = i.type === C.I_KEY ? '#ffd700'
+                   : (i.type === C.I_POTION ? '#ff6b8a' : i.type === C.I_POTION_LARGE ? '#c084fc' : C.COL.MINIMAP_ITEM);
       mc.fillRect(i.c * tw + 1, i.r * th + 1, tw - 1, th - 1);
     });
 
@@ -1126,7 +1165,10 @@ class Game {
       if (i.collected) return;
       const k = i.r * 1000 + i.c;
       if (!this.explored.has(k)) return;
-      mc.fillStyle = i.type === C.I_HEART ? '#ef4444' : '#ffd700';
+      mc.fillStyle = i.type === C.I_HEART ? '#ef4444'
+                   : i.type === C.I_POTION ? '#ff6b8a'
+                   : i.type === C.I_POTION_LARGE ? '#c084fc'
+                   : '#ffd700';
       mc.fillRect(i.c * tw + tw * 0.25, i.r * th + th * 0.25, tw * 0.5, th * 0.5);
     });
 

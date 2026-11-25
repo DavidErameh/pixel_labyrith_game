@@ -802,6 +802,73 @@ const Sprites = (() => {
         px(ctx, '#ffd700', x + H + 3, cy + 22, 4, 2);
         px(ctx, '#ffd700', x + H + 3, cy + 25, 3, 2);
         break;
+
+      case C.I_POTION: {
+        // Small red potion bottle (+2 HP)
+        const glowAlpha = 0.18 + 0.12 * Math.sin(f / 8 * Math.PI * 2);
+        // Glow
+        ctx.save();
+        ctx.globalAlpha = glowAlpha;
+        ctx.fillStyle = '#ff4466';
+        ctx.beginPath();
+        ctx.arc(x + H, cy + H, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        // Bottle body
+        ctx.fillStyle = '#cc2244';
+        ctx.beginPath();
+        ctx.arc(x + H, cy + 20, 7, 0, Math.PI * 2);
+        ctx.fill();
+        // Bottle neck
+        px(ctx, '#cc2244', x + H - 2, cy + 11, 4, 5);
+        // Cork
+        px(ctx, '#c4a265', x + H - 2, cy + 9, 5, 3);
+        // Shine
+        ctx.fillStyle = 'rgba(255,180,200,0.55)';
+        ctx.beginPath();
+        ctx.arc(x + H - 2, cy + 18, 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Label "+2"
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 6px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('+2', x + H, cy + 22);
+        break;
+      }
+
+      case C.I_POTION_LARGE: {
+        // Large purple/gold potion bottle (+5 HP)
+        const glowL = 0.20 + 0.14 * Math.sin(f / 8 * Math.PI * 2);
+        // Outer glow
+        ctx.save();
+        ctx.globalAlpha = glowL;
+        ctx.fillStyle = '#ffaa00';
+        ctx.beginPath();
+        ctx.arc(x + H, cy + H, 13, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        // Bottle body (wider)
+        ctx.fillStyle = '#7c3aed';
+        ctx.beginPath();
+        ctx.arc(x + H, cy + 20, 9, 0, Math.PI * 2);
+        ctx.fill();
+        // Neck
+        px(ctx, '#7c3aed', x + H - 3, cy + 9, 6, 7);
+        // Cork with wax seal
+        px(ctx, '#c4a265', x + H - 3, cy + 7, 7, 3);
+        px(ctx, '#ff8800', x + H - 1, cy + 6, 3, 2);
+        // Shine
+        ctx.fillStyle = 'rgba(230,180,255,0.55)';
+        ctx.beginPath();
+        ctx.arc(x + H - 3, cy + 17, 4, 0, Math.PI * 2);
+        ctx.fill();
+        // Label "+5"
+        ctx.fillStyle = '#ffe4a0';
+        ctx.font = 'bold 7px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('+5', x + H, cy + 23);
+        break;
+      }
     }
   }
 
