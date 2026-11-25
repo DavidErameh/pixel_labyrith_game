@@ -6,13 +6,20 @@
   'use strict';
 
   let game = null;
+  let selectedClass = 'knight'; // set by class select screen
 
   // ── Screen Manager ──────────────────────────────────────────
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById(id);
     if (el) el.classList.add('active');
-    if (id === 'screen-title') updateContinueBtn();
+    if (id === 'screen-title') {
+      updateContinueBtn();
+      Music.play('title');
+    } else if (id === 'screen-classselect') {
+      Music.play('classSelect');
+      UI.animateClassSelectPreviews();
+    }
   }
 
   function updateContinueBtn() {
@@ -22,7 +29,9 @@
     const saved = UI.loadProgress();
     if (saved && saved.player) {
       btn.classList.remove('hidden');
-      if (info) info.textContent = `(F${saved.floor} • 💎${saved.player.score})`;
+      const cls = saved.playerClass || 'knight';
+      const icon = cls === 'wizard' ? '🔮' : '⚔️';
+      if (info) info.textContent = `(F${saved.floor} • 💎${saved.player.score} ${icon})`;
     } else {
       btn.classList.add('hidden');
     }
@@ -31,14 +40,18 @@
   // ── Title Screen ────────────────────────────────────────────
   UI.animateTitleBg();
   updateContinueBtn();
+  Music.play('title');
 
   document.getElementById('btn-continue').addEventListener('click', () => {
     const saved = UI.loadProgress();
-    if (saved) startNewGame(saved);
+    if (saved) {
+      selectedClass = saved.playerClass || 'knight';
+      startNewGame(saved);
+    }
   });
 
   document.getElementById('btn-newgame').addEventListener('click', () => {
-    startNewGame(null);
+    showScreen('screen-classselect');
   });
 
   document.getElementById('btn-howtoplay').addEventListener('click', () => {
@@ -58,20 +71,76 @@
     showScreen('screen-title');
   });
 
+  // ── How To Play Tabs ────────────────────────────────────────
+  document.getElementById('tab-knight-btn').addEventListener('click', () => {
+    document.getElementById('tab-knight').classList.add('active');
+    document.getElementById('tab-wizard').classList.remove('active');
+    document.getElementById('tab-knight-btn').classList.add('active');
+    document.getElementById('tab-wizard-btn').classList.remove('active');
+  });
+  document.getElementById('tab-wizard-btn').addEventListener('click', () => {
+    document.getElementById('tab-wizard').classList.add('active');
+    document.getElementById('tab-knight').classList.remove('active');
+    document.getElementById('tab-wizard-btn').classList.add('active');
+    document.getElementById('tab-knight-btn').classList.remove('active');
+  });
+
+  // ── Class Select Screen ─────────────────────────────────────
+  function pickClass(cls) {
+    selectedClass = cls;
+    startNewGame(null);
+  }
+
+  document.getElementById('card-knight').addEventListener('click', () => pickClass('knight'));
+  document.getElementById('card-wizard').addEventListener('click', () => pickClass('wizard'));
+  document.querySelector('.knight-btn').addEventListener('click', (e) => { e.stopPropagation(); pickClass('knight'); });
+  document.querySelector('.wizard-btn').addEventListener('click', (e) => { e.stopPropagation(); pickClass('wizard'); });
+
+  // Key shortcuts 1/2 on class select
+  window.addEventListener('keydown', e => {
+    const screen = document.getElementById('screen-classselect');
+    if (!screen || !screen.classList.contains('active')) return;
+    if (e.key === '1') pickClass('knight');
+    if (e.key === '2') pickClass('wizard');
+    if (e.key === 'Escape') showScreen('screen-title');
+  });
+
   // ── Game Start ──────────────────────────────────────────────
   function startNewGame(saveData = null) {
     if (game) { game.destroy(); game = null; }
 
     const canvas = document.getElementById('game-canvas');
     const minimap = document.getElementById('minimap-canvas');
-    game = new Game(canvas, minimap);
+    const cls = saveData ? (saveData.playerClass || selectedClass) : selectedClass;
+    game = new Game(canvas, minimap, cls);
+
+    // HUD setup for class
+    if (cls === 'wizard') {
+      document.getElementById('hud-mp').classList.remove('hidden');
+      const fireBtn = document.getElementById('dpad-fire');
+      const shieldBtn = document.getElementById('dpad-shield');
+      if (fireBtn) { fireBtn.classList.remove('hidden'); fireBtn.textContent = '🔥'; }
+      if (shieldBtn) { shieldBtn.textContent = '✨'; shieldBtn.style.borderColor = '#a78bfa'; }
+      document.getElementById('focus-prompt').textContent =
+        '🖱️ Click to play | Space=Fireball · E=Burst · Shift(hold)=Barrier · M=Map';
+    } else {
+      document.getElementById('hud-mp').classList.add('hidden');
+      const fireBtn = document.getElementById('dpad-fire');
+      const shieldBtn = document.getElementById('dpad-shield');
+      if (fireBtn) fireBtn.classList.add('hidden');
+      if (shieldBtn) { shieldBtn.textContent = '🛡️'; shieldBtn.style.borderColor = ''; }
+      document.getElementById('focus-prompt').textContent =
+        '🖱️ Click to play | Space=Sword · Shift(hold)=Shield · M=Map';
+    }
+    UI.setClassBadge(cls);
 
     // HUD callbacks
     game.onHpUpdate = (hp, max) => UI.updateHp(hp, max);
     game.onScoreUpdate = (score) => UI.updateScore(score);
     game.onFloorUpdate = (floor) => UI.updateFloor(floor);
     game.onKeysUpdate = (keys) => UI.updateKeys(keys);
-    game.onPowerupUpdate = (type, ratio) => UI.updatePowerup(type, ratio);
+    game.onShieldUpdate = (active, hits, cd, isWizard) => UI.updateShield(active, hits, cd, isWizard);
+    game.onMpUpdate = (mp, maxMp) => UI.updateMp(mp, maxMp);
     game.onFloorBanner = (floor) => UI.showFloorBanner(floor);
     game.onSave = (data) => UI.saveProgress(data);
     game.onLore = (text) => {
@@ -79,16 +148,15 @@
       UI.showLore(text);
     };
 
-    // Game events
     game.onGameOver = (floor, score) => {
+      Music.stop();
       UI.showGameOver(floor, score, !!UI.loadProgress());
     };
-
     game.onLevelComplete = (nextFloor, kills, gems) => {
       UI.showLevelUp(nextFloor, kills, gems);
     };
-
     game.onVictory = (score) => {
+      Music.stop();
       UI.clearProgress();
       UI.showVictory(score);
     };
@@ -99,11 +167,13 @@
     } else {
       game.startFloor(1);
     }
+
     showScreen('screen-game');
+    Music.play('dungeon');
+
     const focusPrompt = document.getElementById('focus-prompt');
     if (focusPrompt) focusPrompt.classList.remove('hidden');
 
-    // Force resize AFTER screen is visible so getBoundingClientRect returns real dimensions
     requestAnimationFrame(() => {
       game._handleResize();
       game._updateCamera && game._updateCamera();
@@ -111,7 +181,6 @@
       canvas.focus();
     });
 
-    // Kick off input
     bindKeyboard();
     bindDpad();
   }
@@ -138,14 +207,31 @@
 
     window.addEventListener('keydown', e => {
       if (!game) return;
+      const screenGame = document.getElementById('screen-game');
+      if (!screenGame || !screenGame.classList.contains('active')) return;
+
       hidePrompt();
+
       if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
         if (!e.repeat) game.attack();
         return;
       }
+      // Hold-to-block: Shift or Q keydown
+      if ((e.key === 'Shift' || e.key === 'q' || e.key === 'Q') && !e.repeat) {
+        game.startHoldShield();
+        return;
+      }
+      // Fire Burst: E key (wizard only)
+      if ((e.key === 'e' || e.key === 'E') && !e.repeat) {
+        if (game) game.fireBurst && game.fireBurst();
+        return;
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        if (!e.repeat) toggleExpandedMap();
+        return;
+      }
       game.keyDown(e.key);
-      // Prevent scroll
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
         e.preventDefault();
       }
@@ -154,11 +240,17 @@
     window.addEventListener('keyup', e => {
       if (!game) return;
       game.keyUp(e.key);
+      // Release hold-to-block
+      if (e.key === 'Shift' || e.key === 'q' || e.key === 'Q') {
+        game.stopHoldShield && game.stopHoldShield();
+      }
     });
 
-    // Escape = pause
     window.addEventListener('keydown', e => {
-      if (e.key === 'Escape') togglePause();
+      if (e.key === 'Escape') {
+        const screenGame = document.getElementById('screen-game');
+        if (screenGame && screenGame.classList.contains('active')) togglePause();
+      }
     });
   }
 
@@ -178,22 +270,17 @@
     Object.entries(dpadMap).forEach(([id, dir]) => {
       const btn = document.getElementById(id);
       if (!btn) return;
-
       let holdInterval = null;
-
       function pressStart() {
         if (!game) return;
         game.dpadPress(dir.r, dir.c);
         btn.classList.add('pressed');
-        holdInterval = setInterval(() => {
-          if (game) game.dpadPress(dir.r, dir.c);
-        }, 160);
+        holdInterval = setInterval(() => { if (game) game.dpadPress(dir.r, dir.c); }, 240);
       }
       function pressEnd() {
         btn.classList.remove('pressed');
         clearInterval(holdInterval);
       }
-
       btn.addEventListener('touchstart', e => { e.preventDefault(); pressStart(); }, { passive: false });
       btn.addEventListener('touchend', e => { e.preventDefault(); pressEnd(); }, { passive: false });
       btn.addEventListener('mousedown', pressStart);
@@ -201,7 +288,7 @@
       btn.addEventListener('mouseleave', pressEnd);
     });
 
-    // Action button (center dpad — active sword attack)
+    // Attack button
     const actionBtn = document.getElementById('dpad-action');
     if (actionBtn) {
       const doAttack = e => {
@@ -214,7 +301,63 @@
       actionBtn.addEventListener('touchstart', doAttack, { passive: false });
       actionBtn.addEventListener('mousedown', doAttack);
     }
+
+    // Shield / Barrier button (hold)
+    const shieldBtn = document.getElementById('dpad-shield');
+    if (shieldBtn) {
+      shieldBtn.addEventListener('touchstart', e => {
+        if (e.cancelable) e.preventDefault();
+        if (!game) return;
+        shieldBtn.classList.add('pressed');
+        game.startHoldShield && game.startHoldShield();
+      }, { passive: false });
+      shieldBtn.addEventListener('touchend', e => {
+        if (e.cancelable) e.preventDefault();
+        shieldBtn.classList.remove('pressed');
+        game.stopHoldShield && game.stopHoldShield();
+      }, { passive: false });
+      shieldBtn.addEventListener('mousedown', () => { if (game) game.startHoldShield && game.startHoldShield(); shieldBtn.classList.add('pressed'); });
+      shieldBtn.addEventListener('mouseup', () => { if (game) game.stopHoldShield && game.stopHoldShield(); shieldBtn.classList.remove('pressed'); });
+    }
+
+    // Fire Burst button (wizard)
+    const fireBtn = document.getElementById('dpad-fire');
+    if (fireBtn) {
+      const doFire = e => {
+        if (e.cancelable) e.preventDefault();
+        if (!game) return;
+        fireBtn.classList.add('pressed');
+        game.fireBurst && game.fireBurst();
+        setTimeout(() => fireBtn.classList.remove('pressed'), 120);
+      };
+      fireBtn.addEventListener('touchstart', doFire, { passive: false });
+      fireBtn.addEventListener('mousedown', doFire);
+    }
   }
+
+  // ── Expanded Map Toggle ─────────────────────────────────────
+  function toggleExpandedMap() {
+    if (!game) return;
+    const ov = document.getElementById('overlay-map');
+    const expCanvas = document.getElementById('expanded-map-canvas');
+    if (!ov || !expCanvas) return;
+    const isHidden = ov.classList.contains('hidden');
+    if (isHidden) {
+      game.pause();
+      game.renderExpandedMap(expCanvas);
+      ov.classList.remove('hidden');
+    } else {
+      ov.classList.add('hidden');
+      game.resume();
+    }
+  }
+
+  const mapBtn = document.getElementById('btn-map');
+  if (mapBtn) mapBtn.addEventListener('click', toggleExpandedMap);
+  const minimapEl = document.getElementById('minimap-canvas');
+  if (minimapEl) minimapEl.addEventListener('click', toggleExpandedMap);
+  const closeMapBtn = document.getElementById('btn-close-map');
+  if (closeMapBtn) closeMapBtn.addEventListener('click', toggleExpandedMap);
 
   // ── Swipe Controls (mobile) ─────────────────────────────────
   (function bindSwipe() {
@@ -255,6 +398,7 @@
   if (muteBtn) {
     muteBtn.addEventListener('click', () => {
       const isMuted = Sound.toggleMute();
+      Music.setMuted(isMuted);
       muteBtn.textContent = isMuted ? '🔇' : '🔊';
     });
   }
@@ -276,6 +420,7 @@
   document.getElementById('btn-quit').addEventListener('click', () => {
     UI.hideAllOverlays();
     if (game) { game.destroy(); game = null; }
+    Music.stop();
     showScreen('screen-title');
   });
 
@@ -284,6 +429,7 @@
     const saved = UI.loadProgress();
     if (!saved) return;
     UI.hideAllOverlays();
+    selectedClass = saved.playerClass || 'knight';
     startNewGame(saved);
   });
   document.getElementById('btn-save-score').addEventListener('click', () => {
@@ -298,7 +444,7 @@
 
   document.getElementById('btn-retry').addEventListener('click', () => {
     UI.hideAllOverlays();
-    startNewGame();
+    showScreen('screen-classselect');
   });
 
   document.getElementById('btn-go-menu').addEventListener('click', () => {
@@ -311,7 +457,6 @@
   document.getElementById('btn-nextlevel').addEventListener('click', () => {
     UI.hideAllOverlays();
     const nextFloor = parseInt(document.getElementById('lu-floor').textContent) || 2;
-
     if (!game) return;
     game.startFloor(nextFloor);
     UI.saveProgress(game.serialize());
@@ -343,7 +488,6 @@
     if (e.scale !== 1) e.preventDefault();
   }, { passive: false });
 
-  // Double-tap prevention
   let lastTap = 0;
   document.addEventListener('touchend', e => {
     const now = Date.now();

@@ -4,10 +4,19 @@
 
 // ── PLAYER ─────────────────────────────────────────────────
 class Player {
-  constructor(r, c) {
+  constructor(r, c, playerClass = 'knight') {
     this.r = r; this.c = c;
-    this.hp = C.PLAYER_MAX_HP;
-    this.maxHp = C.PLAYER_MAX_HP;
+    this.playerClass = playerClass;
+
+    // HP — class dependent
+    if (playerClass === 'wizard') {
+      this.maxHp = C.WIZARD_MAX_HP;
+      this.hp    = C.WIZARD_MAX_HP;
+    } else {
+      this.maxHp = C.KNIGHT_MAX_HP;
+      this.hp    = C.KNIGHT_MAX_HP;
+    }
+
     this.keys = 0;
     this.score = 0;
     this.kills = { slime: 0, skeleton: 0, ghost: 0, boss: 0 };
@@ -19,26 +28,45 @@ class Player {
     this.alive = true;
     this.invincible = false;
     this.invincibleTimer = 0;
-    this.powerup = null;
-    this.powerupTimer = 0;
-    this.powerupDuration = C.POWERUP_DURATION;
+
+    // ── Knight: physical shield (hold-to-block) ───────────────
+    this.shieldActive = false;
+    this.shieldHits   = C.KNIGHT_SHIELD_HITS;
+    this.shieldCooldown = 0;
+    this.shieldHeld   = false; // true while Shift is held down
+
+    // ── Wizard: MP + arcane barrier ──────────────────────────
+    this.mp    = playerClass === 'wizard' ? C.WIZARD_MAX_MP : 0;
+    this.maxMp = playerClass === 'wizard' ? C.WIZARD_MAX_MP : 0;
+    this.mpRegenAccum = 0;
+
+    // Wizard barrier
+    this.barrierActive   = false;
+    this.barrierHits     = C.WIZARD_BARRIER_HITS;
+    this.barrierCooldown = 0;
+    this.barrierHeld     = false; // true while Shift is held
+
+    this.rootedTimer = 0;
+
     this.gemsThisFloor = 0;
     this.killsThisFloor = 0;
-    this.effects = [];   // { type, r, c, frame, text, color }
-    this.slashes = [];   // { r, c, dir, timer, duration, isPower }
-    this.clashes = [];   // { r, c, timer, duration, isPower }
+    this.effects   = [];   // { type, r, c, frame, text, color }
+    this.slashes   = [];   // { r, c, dir, timer, duration, isPower, isFire }
+    this.clashes   = [];   // { r, c, timer, duration, isPower, isFire }
     this.particles = []; // { x, y, vx, vy, color, size, life, maxLife }
-    this.attackTimer = 0;
+    this.attackTimer   = 0;
     this.attackCooldown = 0;
+    this.attackDash = null; // { dr, dc, timer, duration }
+
+    // Fire Burst cooldown (wizard only)
+    this.fireBurstCooldown = 0;
   }
 
   get dmg() {
-    return this.powerup === 'sword' ? C.PLAYER_DMG * 2 : C.PLAYER_DMG;
+    return this.playerClass === 'wizard' ? C.WIZARD_DMG : C.KNIGHT_DMG;
   }
 
-  get speed() {
-    return this.powerup === 'speed' ? this.moveDelay * 0.5 : this.moveDelay;
-  }
+  get speed() { return this.moveDelay; }
 
   update(dt) {
     this.animTimer += dt;
@@ -49,11 +77,54 @@ class Player {
       if (this.invincibleTimer <= 0) this.invincible = false;
     }
 
-    if (this.powerup) {
-      this.powerupTimer -= dt;
-      if (this.powerupTimer <= 0) {
-        this.powerup = null;
-        this.powerupTimer = 0;
+    // Knight: shield cd
+    if (this.shieldCooldown > 0) {
+      this.shieldCooldown = Math.max(0, this.shieldCooldown - dt);
+    }
+
+    // Knight: hold-to-block — shieldActive driven by shieldHeld
+    if (this.playerClass === 'knight') {
+      if (this.shieldHeld && this.shieldCooldown <= 0 && this.shieldHits > 0) {
+        this.shieldActive = true;
+      } else if (!this.shieldHeld) {
+        this.shieldActive = false;
+      }
+    }
+
+    // Wizard: barrier cd + hold
+    if (this.playerClass === 'wizard') {
+      if (this.barrierCooldown > 0) {
+        this.barrierCooldown = Math.max(0, this.barrierCooldown - dt);
+      }
+      if (this.barrierHeld && this.barrierCooldown <= 0 && this.barrierHits > 0 && this.mp >= C.WIZARD_BARRIER_COST) {
+        if (!this.barrierActive) {
+          this.mp -= C.WIZARD_BARRIER_COST;
+          this.barrierActive = true;
+        }
+      } else if (!this.barrierHeld) {
+        this.barrierActive = false;
+      }
+      if (this.fireBurstCooldown > 0) {
+        this.fireBurstCooldown = Math.max(0, this.fireBurstCooldown - dt);
+      }
+
+      // MP passive regen
+      this.mpRegenAccum += dt;
+      const regenMs = 1000 / C.WIZARD_MP_REGEN;
+      while (this.mpRegenAccum >= regenMs) {
+        this.mpRegenAccum -= regenMs;
+        if (this.mp < this.maxMp) this.mp = Math.min(this.maxMp, this.mp + 1);
+      }
+    }
+
+    if (this.rootedTimer > 0) {
+      this.rootedTimer = Math.max(0, this.rootedTimer - dt);
+    }
+
+    if (this.attackDash) {
+      this.attackDash.timer += dt;
+      if (this.attackDash.timer >= this.attackDash.duration) {
+        this.attackDash = null;
       }
     }
 
@@ -81,21 +152,79 @@ class Player {
 
   takeDamage(dmg) {
     if (this.invincible) return false;
-    if (this.powerup === 'shield') { dmg = Math.max(0, dmg - 1); }
     this.hp = Math.max(0, this.hp - dmg);
     this.invincible = true;
-    this.invincibleTimer = 800;
+    this.invincibleTimer = 650;
     if (this.hp <= 0) this.alive = false;
     return true;
+  }
+
+  // Knight hold-to-block helpers
+  startHoldShield() {
+    if (this.playerClass !== 'knight') {
+      // Wizard: Arcane Barrier hold
+      this.barrierHeld = true;
+      return;
+    }
+    this.shieldHeld = true;
+  }
+
+  stopHoldShield() {
+    this.shieldHeld = false;
+    this.barrierHeld = false;
+  }
+
+  // Legacy toggle for keyboard-only flow (space)
+  toggleShield() {
+    if (this.playerClass === 'wizard') {
+      this.barrierHeld = !this.barrierHeld;
+      return true;
+    }
+    if (this.shieldCooldown > 0) return false;
+    this.shieldHeld = !this.shieldHeld;
+    return true;
+  }
+
+  absorbShieldHit() {
+    // Knight
+    if (this.playerClass === 'knight' && this.shieldActive) {
+      this.shieldHits--;
+      if (this.shieldHits <= 0) {
+        this.shieldActive = false;
+        this.shieldHeld   = false;
+        this.shieldCooldown = C.SHIELD_COOLDOWN;
+        this.shieldHits = C.KNIGHT_SHIELD_HITS;
+        return 'broken';
+      }
+      return 'blocked';
+    }
+    // Wizard barrier
+    if (this.playerClass === 'wizard' && this.barrierActive) {
+      this.barrierHits--;
+      if (this.barrierHits <= 0) {
+        this.barrierActive = false;
+        this.barrierHeld   = false;
+        this.barrierCooldown = C.WIZARD_BARRIER_COOLDOWN;
+        this.barrierHits = C.WIZARD_BARRIER_HITS;
+        return 'broken';
+      }
+      return 'blocked';
+    }
+    return false;
+  }
+
+  isBlocking() {
+    return (this.playerClass === 'knight' && this.shieldActive) ||
+           (this.playerClass === 'wizard' && this.barrierActive);
   }
 
   heal(amount) {
     this.hp = Math.min(this.maxHp, this.hp + amount);
   }
 
-  activatePowerup(type) {
-    this.powerup = type;
-    this.powerupTimer = this.powerupDuration;
+  gainMp(amount) {
+    if (this.playerClass !== 'wizard') return;
+    this.mp = Math.min(this.maxMp, this.mp + amount);
   }
 
   addEffect(type, r, c, text = '', color = '#ffd700') {
@@ -107,8 +236,7 @@ class Player {
       const angle = Math.random() * Math.PI * 2;
       const spd = (0.4 + Math.random() * 0.8) * speed;
       this.particles.push({
-        x: wx,
-        y: wy,
+        x: wx, y: wy,
         vx: Math.cos(angle) * spd,
         vy: Math.sin(angle) * spd,
         color,
@@ -144,14 +272,21 @@ class Enemy {
     this.lastPlayerPos = null;
     this.stunTimer = 0;
     this.hitFlashTimer = 0;
+    this.attackDash = null;
+    this.attackCooldown = 0;
   }
 
-  update(dt, player, grid, rows, cols) {
+  update(dt, player, grid, rows, cols, onHitPlayer) {
     if (!this.alive) return;
     this.animTimer += dt;
     if (this.animTimer > 120) { this.frame++; this.animTimer = 0; }
 
     if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+    if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    if (this.attackDash) {
+      this.attackDash.timer += dt;
+      if (this.attackDash.timer >= this.attackDash.duration) this.attackDash = null;
+    }
     if (this.stunTimer > 0) { this.stunTimer -= dt; return; }
 
     this.moveTimer += dt;
@@ -160,26 +295,35 @@ class Enemy {
 
     const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
 
-    // Aggro
     if (dist <= this.aggroRange) this.isAggro = true;
     if (dist > this.aggroRange * 2) this.isAggro = false;
 
     if (!this.isAggro) {
-      // Wander randomly
       if (Math.random() < 0.4) this._moveRandom(grid, rows, cols);
       return;
     }
 
     this.lastPlayerPos = { r: player.r, c: player.c };
 
-    // Attack if adjacent
     if (dist === 1) {
-      player.takeDamage(this.dmg);
+      this.strikePlayer(player, onHitPlayer);
       return;
     }
 
-    // Chase player (simple)
     this._chasePlayer(player, grid, rows, cols);
+  }
+
+  strikePlayer(player, onHitPlayer) {
+    if (this.attackCooldown > 0) return;
+    this.attackCooldown = 650;
+    this.attackDash = {
+      dr: Math.sign(player.r - this.r),
+      dc: Math.sign(player.c - this.c),
+      timer: 0,
+      duration: 180,
+    };
+    if (onHitPlayer) onHitPlayer(this, this.dmg);
+    else player.takeDamage(this.dmg);
   }
 
   _chasePlayer(player, grid, rows, cols) {
@@ -214,11 +358,73 @@ class Enemy {
 
   takeDamage(dmg) {
     this.hp -= dmg;
-    this.stunTimer = 200;
+    this.stunTimer = 90;
     this.hitFlashTimer = 150;
     if (this.hp <= 0) { this.alive = false; return true; }
     return false;
   }
+}
+
+// ── GIANT SPIDER MINI-BOSS ──────────────────────────────────
+class Spider extends Enemy {
+  constructor(r, c, floor) {
+    super('spider', r, c, floor);
+    this.shootCooldown = 1600;
+    this.nextProj = 'web';
+    this.aggroRange = 8;
+  }
+
+  update(dt, player, grid, rows, cols, onHitPlayer, onShoot) {
+    if (!this.alive) return;
+    const wasStunned = this.stunTimer > 0;
+    super.update(dt, player, grid, rows, cols, onHitPlayer);
+    if (wasStunned || !this.isAggro) return;
+
+    this.shootCooldown -= dt;
+    const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
+    if (this.shootCooldown <= 0 && dist <= 7 && dist >= 2) {
+      this.shootCooldown = 2500;
+      if (onShoot) {
+        onShoot(this, this.nextProj);
+        this.nextProj = this.nextProj === 'web' ? 'poison' : 'web';
+      }
+    }
+  }
+}
+
+// ── PROJECTILE ─────────────────────────────────────────────
+class Projectile {
+  constructor(type, r, c, vx, vy, dmg, owner) {
+    this.type = type; // 'web' | 'poison' | 'fireball' | 'fireburst_ring'
+    const T = C.TILE;
+    this.x = c * T + T / 2;
+    this.y = r * T + T / 2;
+    this.vx = vx;
+    this.vy = vy;
+    this.dmg = dmg;
+    this.owner = owner;
+    this.reflected = false;
+    this.alive = true;
+    this.frame = 0;
+    this.animTimer = 0;
+    // Fireball range limiter
+    this.distanceTravelled = 0;
+    this.maxDistance = (type === 'fireball') ? C.WIZARD_FIREBALL_RANGE * C.TILE : 9999;
+  }
+
+  update(dt) {
+    this.animTimer += dt;
+    if (this.animTimer > 80) { this.frame++; this.animTimer = 0; }
+    const dx = this.vx * (dt / 1000);
+    const dy = this.vy * (dt / 1000);
+    this.x += dx;
+    this.y += dy;
+    this.distanceTravelled += Math.hypot(dx, dy);
+    if (this.distanceTravelled >= this.maxDistance) this.alive = false;
+  }
+
+  get r() { return Math.floor(this.y / C.TILE); }
+  get c() { return Math.floor(this.x / C.TILE); }
 }
 
 // ── BOSS (special behavior) ─────────────────────────────────
@@ -227,29 +433,27 @@ class Boss extends Enemy {
     super('boss', r, c, floor);
     this.phase = 1;
     this.specialCooldown = 0;
-    this.aggroRange = 999; // Always aggro
+    this.aggroRange = 999;
     this.isAggro = true;
-    this.moveInterval = 700;
+    this.moveInterval = 650;
   }
 
-  update(dt, player, grid, rows, cols, spawnCallback) {
+  update(dt, player, grid, rows, cols, spawnCallback, onHitPlayer) {
     if (!this.alive) return;
 
-    // Phase 2 at 40% hp
     if (this.phase === 1 && this.hp / this.maxHp < 0.4) {
       this.phase = 2;
-      this.moveInterval = 450;
+      this.moveInterval = 420;
       this.dmg += 1;
     }
 
     this.specialCooldown -= dt;
     if (this.specialCooldown <= 0 && this.phase === 2) {
-      // Spawn minion
       this.specialCooldown = 5000;
       if (spawnCallback) spawnCallback(this.r, this.c);
     }
 
-    super.update(dt, player, grid, rows, cols);
+    super.update(dt, player, grid, rows, cols, onHitPlayer);
   }
 }
 
@@ -273,13 +477,29 @@ class Item {
 const EntityFactory = {
   spawnEnemies(grid, rows, cols, floor, playerStart, bossFloor) {
     const positions = MazeGen.getFloorPositions(grid, rows, cols, playerStart);
-    const count = C.MIN_ENEMIES_BASE + Math.floor(Math.random() * (C.MAX_ENEMIES_BASE - C.MIN_ENEMIES_BASE + 1)) + (floor - 1) * 2;
+    const blocksPerEnemy = C.SPAWN_BLOCKS_MIN + Math.floor(Math.random() * (C.SPAWN_BLOCKS_MAX - C.SPAWN_BLOCKS_MIN + 1));
+    const count = Math.max(8, Math.floor(positions.length / blocksPerEnemy) + (floor - 1) * 2);
     const enemies = [];
 
     if (bossFloor) {
-      // Place boss in center-ish of maze
       const bossPos = positions[Math.floor(positions.length / 2)];
       enemies.push(new Boss(bossPos.r, bossPos.c, floor));
+    }
+
+    for (let r = 1; r < rows - 1; r++) {
+      for (let c = 1; c < cols - 1; c++) {
+        if (grid[r][c] === C.T_SAVEPOINT) {
+          const near = positions
+            .filter(p => Math.abs(p.r - r) + Math.abs(p.c - c) >= 2 && Math.abs(p.r - r) + Math.abs(p.c - c) <= 5)
+            .filter(p => !enemies.some(e => e.r === p.r && e.c === p.c));
+          if (near.length > 0) {
+            const mp = near[Math.floor(Math.random() * near.length)];
+            const miniType = (floor % 2 === 1) ? 'armored_skeleton' : 'spider';
+            if (miniType === 'spider') enemies.push(new Spider(mp.r, mp.c, floor));
+            else enemies.push(new Enemy('armored_skeleton', mp.r, mp.c, floor));
+          }
+        }
+      }
     }
 
     const types = floor < 3
@@ -307,21 +527,16 @@ const EntityFactory = {
     const items = [];
     const shuffled = shuffle([...positions]);
 
-    // Always place a key
     const keyPos = shuffled.shift();
     if (keyPos) items.push(new Item(C.I_KEY, keyPos.r, keyPos.c));
 
-    // Coins and gems
-    const loot = shuffled.slice(0, 8 + floor * 2);
+    const loot = shuffled.slice(0, 10 + floor * 2);
     loot.forEach(pos => {
       const roll = Math.random();
       let type;
-      if (roll < 0.4) type = C.I_COIN;
-      else if (roll < 0.65) type = C.I_GEM;
-      else if (roll < 0.78) type = C.I_HEART;
-      else if (roll < 0.87) type = C.I_SPEED;
-      else if (roll < 0.93) type = C.I_SHIELD;
-      else type = C.I_SWORD;
+      if (roll < 0.45) type = C.I_COIN;
+      else if (roll < 0.72) type = C.I_GEM;
+      else type = C.I_HEART;
       items.push(new Item(type, pos.r, pos.c));
     });
 

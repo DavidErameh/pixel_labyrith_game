@@ -19,6 +19,7 @@
   --green:          #2dc653;
   --blue:           #4fa3e0;
   --purple:         #9b5de5;
+  --wizard-purple:  #7c3aed;
   --torch-orange:   #ff8c00;
   --text-light:     #e0d8c8;
   --text-dim:       #8a8070;
@@ -101,6 +102,123 @@ html, body {
   color: var(--text-dim);
 }
 
+/* ── CLASS SELECT SCREEN ──────────────────────────────────── */
+#screen-classselect {
+  background: radial-gradient(ellipse at 50% 20%, #1a0a2e 0%, #0a0a0f 70%);
+  overflow-y: auto;
+}
+.classselect-container {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 1.5rem;
+  padding: 2rem 1rem;
+  max-width: 820px; width: 95%;
+}
+.classselect-title {
+  font-size: clamp(0.75rem, 3vw, 1.2rem);
+  color: var(--gold);
+  text-align: center;
+  text-shadow: 0 0 15px var(--torch-orange);
+}
+.classselect-sub {
+  font-size: clamp(0.35rem, 1.2vw, 0.48rem);
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: -0.5rem;
+}
+.class-cards {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+.class-card {
+  background: var(--dungeon-stone);
+  border: 2px solid var(--dungeon-mid);
+  padding: 1.25rem 1rem;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.75rem;
+  width: 300px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+  position: relative;
+}
+.class-card:hover, .class-card.selected {
+  transform: scale(1.03);
+}
+#card-knight:hover, #card-knight.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(255, 200, 0, 0.3);
+}
+#card-wizard:hover, #card-wizard.selected {
+  border-color: #a78bfa;
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.35);
+}
+
+.class-preview-wrap {
+  width: 80px; height: 80px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--dungeon-mid);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.class-preview-canvas {
+  width: 80px; height: 80px;
+  image-rendering: pixelated;
+}
+.class-name {
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  margin-top: 0.3rem;
+}
+.knight-name { color: var(--gold); }
+.wizard-name { color: #a78bfa; }
+
+.class-stats {
+  width: 100%;
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: clamp(0.3rem, 1.1vw, 0.42rem);
+  gap: 0.5rem;
+}
+.stat-label { color: var(--text-dim); min-width: 32px; }
+.stat-val { color: var(--text-light); text-align: right; }
+.knight-col { color: var(--gold); }
+.wizard-col { color: #a78bfa; }
+.dim-col { color: var(--text-dim); }
+
+.class-quote {
+  font-size: clamp(0.3rem, 1vw, 0.4rem);
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+  line-height: 1.6;
+  border-top: 1px solid var(--dungeon-mid);
+  padding-top: 0.6rem;
+  width: 100%;
+}
+.class-difficulty {
+  font-size: 0.38rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid;
+}
+.knight-difficulty { color: var(--gold); border-color: var(--gold-dim); }
+.wizard-difficulty { color: #a78bfa; border-color: #6d28d9; }
+
+.class-pick-btn { margin-top: 0.5rem; font-size: 0.5rem !important; }
+.knight-btn { border-color: var(--gold) !important; }
+.wizard-btn { border-color: #a78bfa !important; color: #a78bfa !important; }
+.knight-btn:hover { background: var(--gold) !important; color: #000 !important; }
+.wizard-btn:hover { background: #7c3aed !important; color: #fff !important; }
+
+.classselect-hint {
+  font-size: 0.38rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
 /* ── Buttons ──────────────────────────────────────────────── */
 .menu-btn {
   font-family: var(--pixel-font);
@@ -137,31 +255,52 @@ html, body {
   overflow-y: auto;
 }
 .howto-container, .leaderboard-container {
-  max-width: 540px; width: 90%;
+  max-width: 580px; width: 90%;
   padding: 2rem 1.5rem;
   display: flex; flex-direction: column;
-  align-items: center; gap: 1.5rem;
+  align-items: center; gap: 1.2rem;
 }
 .howto-container h2, .leaderboard-container h2 {
   font-size: clamp(0.9rem, 3vw, 1.4rem);
   color: var(--gold);
   text-align: center;
 }
+.howto-tabs {
+  display: flex; gap: 0.5rem; width: 100%;
+}
+.howto-tab {
+  font-family: var(--pixel-font);
+  font-size: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--dungeon-dark);
+  border: 2px solid var(--dungeon-mid);
+  color: var(--text-dim);
+  cursor: pointer;
+  flex: 1;
+}
+.howto-tab.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--dungeon-stone);
+}
+.howto-tab-content { display: none; width: 100%; }
+.howto-tab-content.active { display: block; }
 .howto-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 0.75rem; width: 100%;
+  margin-top: 0.5rem;
 }
 .howto-item {
   background: var(--dungeon-stone);
   border: 1px solid var(--dungeon-mid);
   padding: 0.6rem;
-  font-size: clamp(0.35rem, 1.2vw, 0.52rem);
+  font-size: clamp(0.33rem, 1.1vw, 0.48rem);
   display: flex; align-items: flex-start; gap: 0.4rem;
 }
 .controls-section { width: 100%; }
-.controls-section h3 { color: var(--gold); font-size: 0.65rem; margin-bottom: 0.75rem; }
-.controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.controls-grid > div { font-size: 0.4rem; color: var(--text-light); line-height: 1.8; }
+.controls-section h3 { color: var(--gold); font-size: 0.6rem; margin-bottom: 0.6rem; }
+.controls-grid { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+.controls-grid > div { font-size: 0.38rem; color: var(--text-light); line-height: 1.8; }
 
 /* ── LEADERBOARD ──────────────────────────────────────────── */
 #leaderboard-list { width: 100%; }
@@ -207,9 +346,20 @@ html, body {
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.45rem;
 }
+/* MP row */
+#hud-mp {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.45rem;
+}
+#hud-mp.mp-low { animation: mpFlash 0.5s ease-in-out infinite; }
+@keyframes mpFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 .hud-label {
   font-size: 0.4rem; color: var(--text-dim); min-width: 1.5rem;
 }
+.mp-label { color: #a78bfa; }
 #health-bar-wrap {
   width: 80px; height: 10px;
   background: var(--dungeon-dark);
@@ -223,19 +373,31 @@ html, body {
 }
 #hp-text { font-size: 0.38rem; color: var(--text-dim); }
 
-#hud-powerup {
-  display: flex; align-items: center; gap: 0.3rem;
+/* MP bar */
+#mp-bar-wrap {
+  width: 80px; height: 10px;
+  background: var(--dungeon-dark);
+  border: 1px solid #4c1d95;
+  overflow: hidden;
 }
-#powerup-icon { font-size: 0.7rem; }
-#powerup-timer-bar-wrap {
-  width: 50px; height: 6px;
-  background: var(--dungeon-dark); border: 1px solid var(--dungeon-mid); overflow: hidden;
-}
-#powerup-timer-bar {
+#mp-bar {
   height: 100%; width: 100%;
-  background: var(--purple);
-  transition: width 0.1s linear;
+  background: linear-gradient(90deg, #6d28d9, #a78bfa);
+  transition: width 0.2s;
 }
+#mp-text { font-size: 0.38rem; color: #a78bfa; }
+
+#hud-shield {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.38rem;
+  color: var(--text-dim);
+}
+#hud-shield.active #shield-status { color: #60a5fa; }
+#hud-shield.cooldown #shield-status { color: var(--red); }
+#hud-shield.wizard-shield #shield-status { color: #a78bfa; }
+#hud-shield.wizard-shield.active #shield-status { color: #93c5fd; }
+
+#minimap-canvas { cursor: pointer; }
 
 #hud-center {
   text-align: center;
@@ -243,6 +405,7 @@ html, body {
 }
 #hud-level-label { font-size: 0.35rem; color: var(--text-dim); }
 #hud-level { font-size: 1rem; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+#hud-class-badge { font-size: 0.7rem; opacity: 0.85; }
 
 #hud-right { align-items: flex-end; }
 #hud-score, #hud-keys { font-size: 0.45rem; color: var(--text-light); }
@@ -287,13 +450,13 @@ html, body {
   image-rendering: pixelated;
 }
 
-/* PAUSE & MUTE BTNS — live inside #hud-right */
+/* PAUSE & MUTE BTNS */
 .hud-actions {
   display: flex;
   gap: 0.35rem;
   margin-top: 0.2rem;
 }
-#btn-pause, #btn-mute {
+#btn-pause, #btn-mute, #btn-map {
   font-family: var(--pixel-font);
   font-size: 0.65rem;
   background: rgba(30,30,46,0.8);
@@ -302,7 +465,25 @@ html, body {
   cursor: pointer;
   padding: 0.25rem 0.45rem;
 }
-#btn-pause:hover, #btn-mute:hover { background: var(--dungeon-mid); color: var(--gold); }
+#btn-pause:hover, #btn-mute:hover, #btn-map:hover { background: var(--dungeon-mid); color: var(--gold); }
+
+.map-box { max-width: 440px; padding: 1.25rem; }
+#expanded-map-canvas {
+  width: 100%;
+  max-width: 372px;
+  aspect-ratio: 1;
+  border: 2px solid var(--gold-dim);
+  background: #07070e;
+  image-rendering: pixelated;
+}
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  font-size: 0.38rem;
+  color: var(--text-light);
+}
 
 /* ── MOBILE D-PAD ─────────────────────────────────────────── */
 #dpad {
@@ -336,6 +517,16 @@ html, body {
   background: rgba(42,42,62,0.9);
   border-color: var(--gold-dim);
   color: var(--gold);
+}
+.dpad-shield {
+  background: rgba(30, 58, 138, 0.85) !important;
+  border-color: #60a5fa !important;
+  margin-left: 8px;
+}
+.dpad-fire {
+  background: rgba(120, 30, 10, 0.85) !important;
+  border-color: #f97316 !important;
+  margin-left: 2px;
 }
 
 /* ── OVERLAYS ─────────────────────────────────────────────── */
@@ -403,22 +594,13 @@ html, body {
   width: 440px;
   animation: fadeInUp 0.3s ease-out;
 }
-#floor-banner-sub {
-  font-size: 0.45rem;
-  color: var(--text-dim);
-  margin-bottom: 0.4rem;
-}
+#floor-banner-sub { font-size: 0.45rem; color: var(--text-dim); margin-bottom: 0.4rem; }
 #floor-banner-title {
   font-size: clamp(0.65rem, 2.2vw, 0.95rem);
-  color: var(--gold);
-  margin-bottom: 0.6rem;
+  color: var(--gold); margin-bottom: 0.6rem;
   text-shadow: 0 0 10px rgba(255, 140, 0, 0.6);
 }
-#floor-banner-text {
-  font-size: 0.42rem;
-  color: var(--text-light);
-  line-height: 1.8;
-}
+#floor-banner-text { font-size: 0.42rem; color: var(--text-light); line-height: 1.8; }
 
 /* ── TOAST NOTIFICATION ───────────────────────────────────── */
 #toast {
@@ -438,18 +620,18 @@ html, body {
 
 /* ── RESPONSIVE ───────────────────────────────────────────── */
 @media (pointer: fine) {
-  /* has mouse — hide d-pad */
   .mobile-only { display: none !important; }
 }
 @media (pointer: coarse) {
-  /* touch device — show d-pad, adjust game wrap */
   #game-wrap { max-height: calc(100vh - 180px); }
 }
 @media (max-width: 480px) {
   #hud { padding: 0.3rem 0.5rem; }
-  #health-bar-wrap { width: 60px; }
+  #health-bar-wrap, #mp-bar-wrap { width: 55px; }
   #minimap-canvas { width: 70px; height: 70px; }
   .dpad-btn { width: 50px; height: 50px; font-size: 1rem; }
+  .class-cards { flex-direction: column; align-items: center; }
+  .class-card { width: 90%; max-width: 320px; }
 }
 
 /* ── ANIMATIONS ───────────────────────────────────────────── */
@@ -465,6 +647,11 @@ html, body {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes shimmer {
+  0%, 100% { box-shadow: 0 0 8px rgba(167,139,250,0.3); }
+  50% { box-shadow: 0 0 20px rgba(167,139,250,0.7); }
+}
 .game-title { animation: pulse 3s ease-in-out infinite; }
 #hud-level { animation: flicker 2s ease-in-out infinite; }
 .overlay-box { animation: fadeInUp 0.2s ease-out; }
+#card-wizard { animation: shimmer 3s ease-in-out infinite; }

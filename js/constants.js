@@ -20,20 +20,19 @@ const C = {
   T_LORE:       8,
 
   // Entity types
-  E_PLAYER:   'player',
-  E_SLIME:    'slime',
-  E_SKELETON: 'skeleton',
-  E_GHOST:    'ghost',
-  E_BOSS:     'boss',
+  E_PLAYER:           'player',
+  E_SLIME:            'slime',
+  E_SKELETON:         'skeleton',
+  E_GHOST:            'ghost',
+  E_ARMORED_SKELETON: 'armored_skeleton',
+  E_SPIDER:           'spider',
+  E_BOSS:             'boss',
 
-  // Item types
+  // Item types (power-ups removed — only hearts, coins, gems, keys)
   I_COIN:   'coin',
   I_GEM:    'gem',
   I_HEART:  'heart',
   I_KEY:    'key',
-  I_SPEED:  'speed',
-  I_SHIELD: 'shield',
-  I_SWORD:  'sword',
 
   // Colors (canvas draw)
   COL: {
@@ -71,32 +70,57 @@ const C = {
   },
 
   // Gameplay
-  PLAYER_MAX_HP:    10,
-  PLAYER_DMG:        2,
-  PLAYER_MOVE_DELAY: 150,  // ms between moves (held key)
+  PLAYER_MAX_HP:     12,
+  PLAYER_DMG:         2,
+  PLAYER_MOVE_DELAY: 230,  // ms between moves (held key — steady dungeon walk)
+  CAMERA_ZOOM:       2.0,  // ~100% zoomed in
+  SHIELD_MAX_HITS:   3,
+  SHIELD_COOLDOWN:   5000, // 5 seconds cooldown after 3 hits
 
-  // Enemy stats by type per floor multiplier
+  // Class system
+  CLASS_KNIGHT: 'knight',
+  CLASS_WIZARD: 'wizard',
+
+  // Knight stats
+  KNIGHT_MAX_HP:     14,
+  KNIGHT_DMG:         2,
+  KNIGHT_SHIELD_HITS: 3,
+
+  // Wizard stats
+  WIZARD_MAX_HP:     10,
+  WIZARD_DMG:         1,   // weak melee
+  WIZARD_MAX_MP:      60,
+  WIZARD_MP_REGEN:    2.0, // MP per second
+  WIZARD_MP_REGEN_KILL: 8, // MP gained per kill
+  WIZARD_FIREBALL_COST:  10,
+  WIZARD_FIREBURST_COST: 25,
+  WIZARD_BARRIER_COST:   20,
+  WIZARD_BARRIER_HITS:   2,
+  WIZARD_BARRIER_COOLDOWN: 6000,
+  WIZARD_FIREBALL_SPEED: 180, // px/sec
+  WIZARD_FIREBALL_RANGE: 5,   // tiles
+
+  // Enemy stats by type per floor multiplier (harder + faster)
   ENEMIES: {
-    slime:    { hp: 3,  dmg: 1, speed: 0.6, xp: 5,  color: '#2dc653' },
-    skeleton: { hp: 5,  dmg: 2, speed: 0.9, xp: 10, color: '#e0d8c8' },
-    ghost:    { hp: 4,  dmg: 2, speed: 1.1, xp: 12, color: '#9b9bcf' },
-    boss:     { hp: 30, dmg: 4, speed: 0.7, xp: 100,color: '#e63946' },
+    slime:            { hp: 5,  dmg: 2, speed: 0.9,  xp: 10,  color: '#5ce1e6' },
+    skeleton:         { hp: 8,  dmg: 3, speed: 1.1,  xp: 15,  color: '#e0d8c8' },
+    ghost:            { hp: 7,  dmg: 3, speed: 1.25, xp: 18,  color: '#9b9bcf' },
+    armored_skeleton: { hp: 16, dmg: 4, speed: 1.0,  xp: 45,  color: '#94a3b8' },
+    spider:           { hp: 14, dmg: 3, speed: 0.85, xp: 45,  color: '#a855f7' },
+    boss:             { hp: 40, dmg: 5, speed: 0.85, xp: 150, color: '#e63946' },
   },
 
   // Floor config
   FLOORS: 5,  // 5 floors, floor 5 has final boss
-  MIN_ENEMIES_BASE: 4,
-  MAX_ENEMIES_BASE: 8,
+  SPAWN_BLOCKS_MIN: 10,
+  SPAWN_BLOCKS_MAX: 15,
   KEYS_NEEDED: 1,
-
-  // Powerup durations (ms)
-  POWERUP_DURATION: 8000,
 
   // Score values
   SCORE: {
     coin: 10, gem: 50, heart: 0, key: 0,
-    speed: 0, shield: 0, sword: 0,
-    enemy_slime: 5, enemy_skeleton: 10, enemy_ghost: 12, enemy_boss: 100,
+    enemy_slime: 10, enemy_skeleton: 15, enemy_ghost: 18,
+    enemy_armored_skeleton: 45, enemy_spider: 45, enemy_boss: 150,
     floor_clear: 200,
   },
 

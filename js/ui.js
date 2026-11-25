@@ -26,6 +26,23 @@ const UI = (() => {
     txt.textContent = `${hp}/${maxHp}`;
   }
 
+  function updateMp(mp, maxMp) {
+    const bar  = document.getElementById('mp-bar');
+    const txt  = document.getElementById('mp-text');
+    const wrap = document.getElementById('hud-mp');
+    if (!wrap) return;
+    wrap.classList.remove('hidden');
+    if (!bar || !txt) return;
+    const pct = Math.max(0, mp / maxMp * 100);
+    bar.style.width = pct + '%';
+    bar.style.background = pct > 30
+      ? 'linear-gradient(90deg,#6d28d9,#a78bfa)'
+      : 'linear-gradient(90deg,#dc2626,#f87171)';
+    txt.textContent = `${Math.floor(mp)}/${maxMp}`;
+    // Flash when critically low
+    wrap.classList.toggle('mp-low', pct < 20);
+  }
+
   function updateScore(score) {
     const el = document.getElementById('score-val');
     if (el) el.textContent = score;
@@ -41,30 +58,62 @@ const UI = (() => {
     if (el) el.textContent = keys;
   }
 
-  function updatePowerup(type, ratio) {
-    const wrap = document.getElementById('hud-powerup');
-    const icon = document.getElementById('powerup-icon');
-    const bar = document.getElementById('powerup-timer-bar');
-    if (!wrap) return;
-    if (!type) {
-      wrap.classList.add('hidden');
-      return;
+  // isWizard = show barrier display instead of knight shield
+  function updateShield(active, hits, cooldown, isWizard = false) {
+    const wrap   = document.getElementById('hud-shield');
+    const icon   = document.getElementById('shield-icon');
+    const status = document.getElementById('shield-status');
+    if (!wrap || !status) return;
+
+    wrap.classList.remove('active', 'cooldown', 'wizard-shield');
+
+    if (isWizard) {
+      wrap.classList.add('wizard-shield');
+      icon.textContent = '✨';
+      const maxH = C.WIZARD_BARRIER_HITS;
+      if (cooldown > 0) {
+        wrap.classList.add('cooldown');
+        status.textContent = `CD ${(cooldown / 1000).toFixed(1)}s`;
+      } else if (active) {
+        wrap.classList.add('active');
+        status.textContent = `BARRIER (${hits}/${maxH})`;
+      } else {
+        status.textContent = `ARCANE (${hits}/${maxH})`;
+      }
+    } else {
+      icon.textContent = '🛡️';
+      const maxH = C.KNIGHT_SHIELD_HITS;
+      if (cooldown > 0) {
+        wrap.classList.add('cooldown');
+        status.textContent = `CD ${(cooldown / 1000).toFixed(1)}s`;
+      } else if (active) {
+        wrap.classList.add('active');
+        status.textContent = `ACTIVE (${hits}/${maxH})`;
+      } else {
+        status.textContent = `READY (${hits}/${maxH})`;
+      }
     }
-    wrap.classList.remove('hidden');
-    const icons = { speed: '⚡', shield: '🛡️', sword: '⚔️' };
-    icon.textContent = icons[type] || '⚡';
-    bar.style.width = (ratio * 100) + '%';
-    bar.style.background = type === 'speed' ? '#ff9f1c'
-      : type === 'shield' ? '#4fa3e0' : '#e63946';
+  }
+
+  // Show/hide class badge in HUD center
+  function setClassBadge(playerClass) {
+    const badge = document.getElementById('hud-class-badge');
+    if (!badge) return;
+    badge.textContent = playerClass === 'wizard' ? '🔮' : '⚔️';
+    badge.title = playerClass === 'wizard' ? 'Wizard' : 'Knight';
+  }
+
+  // Hide MP bar when playing as knight
+  function hideMpBar() {
+    const wrap = document.getElementById('hud-mp');
+    if (wrap) wrap.classList.add('hidden');
   }
 
   function showGameOver(floor, score, hasSave = false) {
     document.getElementById('go-floor').textContent = floor;
     document.getElementById('go-score').textContent = score;
     const loadBtn = document.getElementById('btn-load-save');
-    if (loadBtn) {
-      loadBtn.classList.toggle('hidden', !hasSave);
-    }
+    if (loadBtn) loadBtn.classList.toggle('hidden', !hasSave);
     document.getElementById('overlay-gameover').classList.remove('hidden');
   }
 
@@ -84,32 +133,23 @@ const UI = (() => {
   function showLore(text) {
     const el = document.getElementById('lore-text');
     const ov = document.getElementById('overlay-lore');
-    if (el && ov) {
-      el.textContent = text;
-      ov.classList.remove('hidden');
-    }
+    if (el && ov) { el.textContent = text; ov.classList.remove('hidden'); }
   }
 
   // ── Save / Load Progress ──────────────────────────────────
   const SAVE_KEY = 'pixelLabyrinth_save';
 
   function saveProgress(data) {
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-      return true;
-    } catch { return false; }
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; }
+    catch { return false; }
   }
 
   function loadProgress() {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    try { const raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) : null; }
+    catch { return null; }
   }
 
-  function clearProgress() {
-    localStorage.removeItem(SAVE_KEY);
-  }
+  function clearProgress() { localStorage.removeItem(SAVE_KEY); }
 
   function showLevelUp(nextFloor, kills, gems) {
     document.getElementById('lu-floor').textContent = nextFloor;
@@ -131,16 +171,15 @@ const UI = (() => {
   const LB_KEY = 'pixelLabyrinth_scores';
 
   function getScores() {
-    try {
-      return JSON.parse(localStorage.getItem(LB_KEY)) || [];
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; }
+    catch { return []; }
   }
 
   function saveScore(name, score, floor) {
     const scores = getScores();
     scores.push({ name: name || 'Anonymous', score, floor, date: new Date().toLocaleDateString() });
     scores.sort((a, b) => b.score - a.score);
-    scores.splice(10); // top 10 only
+    scores.splice(10);
     localStorage.setItem(LB_KEY, JSON.stringify(scores));
   }
 
@@ -176,7 +215,6 @@ const UI = (() => {
       alpha: Math.random(),
     }));
 
-    // Pixel "fire" at top
     const cols = 40;
     const heat = new Float32Array(cols * 3).fill(0);
 
@@ -188,7 +226,6 @@ const UI = (() => {
       ctx.fillStyle = '#05050a';
       ctx.fillRect(0, 0, W, H);
 
-      // Stars
       stars.forEach(s => {
         s.alpha += (Math.random() - 0.5) * 0.05;
         s.alpha = Math.max(0.1, Math.min(1, s.alpha));
@@ -200,7 +237,6 @@ const UI = (() => {
       });
       ctx.globalAlpha = 1;
 
-      // Dungeon silhouette at bottom
       const silH = H * 0.35;
       ctx.fillStyle = '#0d0d1a';
       ctx.beginPath();
@@ -221,7 +257,6 @@ const UI = (() => {
       ctx.closePath();
       ctx.fill();
 
-      // Torch flickers
       for (let i = 1; i < 8; i++) {
         const tx = (i / 8) * W + W / 16;
         const ty = H - silH * (0.5 + (i % 3) * 0.2);
@@ -239,10 +274,47 @@ const UI = (() => {
     loop();
   }
 
+  // ── Class Select animated preview canvas ─────────────────
+  function animateClassSelectPreviews() {
+    const knightCanvas = document.getElementById('knight-preview-canvas');
+    const wizardCanvas = document.getElementById('wizard-preview-canvas');
+    if (!knightCanvas || !wizardCanvas) return;
+
+    let frame = 0;
+    function loop() {
+      // Knight preview
+      knightCanvas.width = knightCanvas.offsetWidth || 80;
+      knightCanvas.height = knightCanvas.offsetHeight || 80;
+      const kctx = knightCanvas.getContext('2d');
+      kctx.clearRect(0, 0, knightCanvas.width, knightCanvas.height);
+      const kScale = knightCanvas.width / 32;
+      kctx.save();
+      kctx.scale(kScale, kScale);
+      Sprites.drawKnightPreview(kctx, 0, 0, frame);
+      kctx.restore();
+
+      // Wizard preview
+      wizardCanvas.width = wizardCanvas.offsetWidth || 80;
+      wizardCanvas.height = wizardCanvas.offsetHeight || 80;
+      const wctx = wizardCanvas.getContext('2d');
+      wctx.clearRect(0, 0, wizardCanvas.width, wizardCanvas.height);
+      const wScale = wizardCanvas.width / 32;
+      wctx.save();
+      wctx.scale(wScale, wScale);
+      Sprites.drawWizardPreview(wctx, 0, 0, frame);
+      wctx.restore();
+
+      frame++;
+      requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
   return {
-    showToast, updateHp, updateScore, updateFloor, updateKeys, updatePowerup,
+    showToast, updateHp, updateMp, updateScore, updateFloor, updateKeys,
+    updateShield, setClassBadge, hideMpBar,
     showGameOver, showLevelUp, showVictory, hideAllOverlays,
     showFloorBanner, showLore, saveProgress, loadProgress, clearProgress,
-    getScores, saveScore, renderLeaderboard, animateTitleBg,
+    getScores, saveScore, renderLeaderboard, animateTitleBg, animateClassSelectPreviews,
   };
 })();

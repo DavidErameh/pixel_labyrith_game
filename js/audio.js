@@ -79,6 +79,27 @@ const Sound = (() => {
     setTimeout(() => playTone(659, 784, 0.22, 'triangle', 0.14), 200);
   }
 
+  function block() {
+    playTone(480, 260, 0.08, 'square', 0.13);
+  }
+
+  function parry() {
+    playTone(780, 1240, 0.12, 'triangle', 0.15);
+  }
+
+  function web() {
+    playTone(280, 520, 0.09, 'sine', 0.09);
+  }
+
+  function squish() {
+    playTone(340, 110, 0.1, 'sine', 0.14);
+    setTimeout(() => playTone(180, 260, 0.07, 'triangle', 0.1), 50);
+  }
+
+  function enemySlash() {
+    playTone(540, 130, 0.09, 'sawtooth', 0.13);
+  }
+
   function toggleMute() {
     muted = !muted;
     return muted;
@@ -88,5 +109,5 @@ const Sound = (() => {
     return muted;
   }
 
-  return { swing, hit, kill, hurt, pickup, key, unlock, clash, save, toggleMute, isMuted };
+  return { swing, hit, kill, hurt, pickup, key, unlock, clash, save, block, parry, web, squish, enemySlash, toggleMute, isMuted };
 })();
