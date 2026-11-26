@@ -129,7 +129,7 @@
       if (fireBtn) { fireBtn.classList.remove('hidden'); fireBtn.textContent = '🔥'; }
       if (shieldBtn) { shieldBtn.textContent = '✨'; shieldBtn.style.borderColor = '#a78bfa'; }
       document.getElementById('focus-prompt').textContent =
-        '🖱️ Click to play | Space=Fireball · E=Burst · Shift(hold)=Barrier · M=Map';
+        '🖱️ Click to play | Space=Fireball · E=Burst · Shift/Q=Barrier · M=Map';
     } else {
       document.getElementById('hud-mp').classList.add('hidden');
       const fireBtn = document.getElementById('dpad-fire');
@@ -137,7 +137,7 @@
       if (fireBtn) fireBtn.classList.add('hidden');
       if (shieldBtn) { shieldBtn.textContent = '🛡️'; shieldBtn.style.borderColor = ''; }
       document.getElementById('focus-prompt').textContent =
-        '🖱️ Click to play | Space=Sword · Shift(hold)=Shield · M=Map';
+        '🖱️ Click to play | Space=Sword · Shift/Q=Shield · M=Map';
     }
     UI.setClassBadge(cls);
 
@@ -146,7 +146,11 @@
     game.onScoreUpdate = (score) => UI.updateScore(score);
     game.onFloorUpdate = (floor) => UI.updateFloor(floor);
     game.onKeysUpdate = (keys) => UI.updateKeys(keys);
-    game.onShieldUpdate = (active, hits, cd, isWizard) => UI.updateShield(active, hits, cd, isWizard);
+    game.onShieldUpdate = (active, hits, cd, isWizard) => {
+      UI.updateShield(active, hits, cd, isWizard);
+      const sb = document.getElementById('dpad-shield');
+      if (sb) sb.classList.toggle('pressed', !!active);
+    };
     game.onMpUpdate = (mp, maxMp) => UI.updateMp(mp, maxMp);
     game.onFloorBanner = (floor) => UI.showFloorBanner(floor);
     game.onSave = (data) => UI.saveProgress(data);
@@ -228,9 +232,9 @@
         if (!e.repeat) game.attack();
         return;
       }
-      // Hold-to-block: Shift or Q keydown
+      // Toggle block: Shift or Q keydown
       if ((e.key === 'Shift' || e.key === 'q' || e.key === 'Q') && !e.repeat) {
-        game.startHoldShield();
+        game.toggleShield && game.toggleShield();
         return;
       }
       // Fire Burst: E key (wizard only)
@@ -251,10 +255,6 @@
     window.addEventListener('keyup', e => {
       if (!game) return;
       game.keyUp(e.key);
-      // Release hold-to-block
-      if (e.key === 'Shift' || e.key === 'q' || e.key === 'Q') {
-        game.stopHoldShield && game.stopHoldShield();
-      }
     });
 
     window.addEventListener('keydown', e => {
@@ -312,24 +312,18 @@
       actionBtn.addEventListener('mousedown', doAttack);
     }
 
-    // Shield / Barrier button (hold)
+    // Shield / Barrier button (tap to toggle)
     const shieldBtn = document.getElementById('dpad-shield');
     if (shieldBtn) {
-      shieldBtn.addEventListener('touchstart', e => {
-        if (e.cancelable) e.preventDefault();
-        if (!game) return;
-        shieldBtn.classList.add('pressed');
-        game.startHoldShield && game.startHoldShield();
-      }, { passive: false });
-      const releaseShield = e => {
+      const doToggleShield = e => {
         if (e && e.cancelable) e.preventDefault();
-        shieldBtn.classList.remove('pressed');
-        game && game.stopHoldShield && game.stopHoldShield();
+        if (!game) return;
+        game.toggleShield && game.toggleShield();
+        const active = game.player && (game.player.shieldHeld || game.player.barrierHeld);
+        shieldBtn.classList.toggle('pressed', !!active);
       };
-      shieldBtn.addEventListener('touchend', releaseShield, { passive: false });
-      shieldBtn.addEventListener('touchcancel', releaseShield);
-      shieldBtn.addEventListener('mousedown', () => { if (game) game.startHoldShield && game.startHoldShield(); shieldBtn.classList.add('pressed'); });
-      shieldBtn.addEventListener('mouseup', () => { if (game) game.stopHoldShield && game.stopHoldShield(); shieldBtn.classList.remove('pressed'); });
+      shieldBtn.addEventListener('touchstart', doToggleShield, { passive: false });
+      shieldBtn.addEventListener('mousedown', doToggleShield);
     }
 
     // Fire Burst button (wizard)

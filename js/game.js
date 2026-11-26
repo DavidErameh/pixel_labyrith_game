@@ -635,7 +635,7 @@ class Game {
         UI.showToast(`✨ Barrier recharging (${(p.barrierCooldown / 1000).toFixed(1)}s)`);
         return;
       }
-      if (p.mp < C.WIZARD_BARRIER_COST) {
+      if (!p.barrierHeld && p.mp < C.WIZARD_BARRIER_COST) {
         UI.showToast('✨ Not enough MP for Barrier!');
         return;
       }

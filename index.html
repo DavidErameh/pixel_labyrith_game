@@ -55,7 +55,7 @@
           <div class="class-stats">
             <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val knight-col">15 ❤️❤️❤️</span></div>
             <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val">Close-range sword</span></div>
-            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val knight-col">Hold SHIFT = Shield (5 hits)</span></div>
+            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val knight-col">SHIFT/Q = Toggle Shield (5 hits)</span></div>
             <div class="stat-row"><span class="stat-label">MP</span><span class="stat-val dim-col">None</span></div>
           </div>
           <p class="class-quote">"The vaults answer to steel."</p>
@@ -72,7 +72,7 @@
           <div class="class-stats">
             <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val wizard-col">10 ❤️❤️</span></div>
             <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val wizard-col">Space = Fireball 🔥</span></div>
-            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val wizard-col">Hold SHIFT = Barrier ✨</span></div>
+            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val wizard-col">SHIFT/Q = Toggle Barrier ✨</span></div>
             <div class="stat-row"><span class="stat-label">MP</span><span class="stat-val wizard-col">60 MP — regen passively</span></div>
           </div>
           <p class="class-quote">"Magic is the light in the dark."</p>
@@ -100,7 +100,7 @@
       <div id="tab-knight" class="howto-tab-content active">
         <div class="howto-grid">
           <div class="howto-item">⚔️ <span>Space = Sword strike (dash-lunge)</span></div>
-          <div class="howto-item">🛡️ <span>Hold Shift/Q = Shield (3 hits before cooldown)</span></div>
+          <div class="howto-item">🛡️ <span>Shift/Q = Toggle Shield (5 hits before cooldown)</span></div>
           <div class="howto-item">❤️ <span>Collect hearts to restore HP</span></div>
           <div class="howto-item">🗝️ <span>Find keys to unlock the exit door</span></div>
           <div class="howto-item">🗺️ <span>Press M or tap Mini-map to expand full map</span></div>
@@ -115,7 +115,7 @@
         <div class="howto-grid">
           <div class="howto-item">🔥 <span>Space = Fireball (10 MP) — ranged, 4 tiles</span></div>
           <div class="howto-item">💥 <span>E / 🔥 btn = Fire Burst AOE (25 MP, 2 tile radius)</span></div>
-          <div class="howto-item">✨ <span>Hold Shift/Q = Arcane Barrier (20 MP, 2 hits)</span></div>
+          <div class="howto-item">✨ <span>Shift/Q = Toggle Arcane Barrier (20 MP, 2 hits)</span></div>
           <div class="howto-item">⚡ <span>MP regens +2/sec passively, +8 per enemy killed</span></div>
           <div class="howto-item">🗝️ <span>Find keys to unlock the exit door</span></div>
           <div class="howto-item">🗺️ <span>Press M to expand dungeon map</span></div>
@@ -127,8 +127,8 @@
       <div class="controls-section">
         <h3>CONTROLS</h3>
         <div class="controls-grid">
-          <div>⌨️ <strong>PC (Knight):</strong> WASD/Arrows · Space=Attack · Shift(hold)=Shield · M=Map</div>
-          <div>⌨️ <strong>PC (Wizard):</strong> WASD/Arrows · Space=Fireball · E=Fire Burst · Shift(hold)=Barrier · M=Map</div>
+          <div>⌨️ <strong>PC (Knight):</strong> WASD/Arrows · Space=Attack · Shift/Q=Shield · M=Map</div>
+          <div>⌨️ <strong>PC (Wizard):</strong> WASD/Arrows · Space=Fireball · E=Fire Burst · Shift/Q=Barrier · M=Map</div>
         </div>
       </div>
       <button class="menu-btn" id="btn-back-howto">◀ BACK</button>
@@ -184,7 +184,7 @@
     <div id="game-wrap">
       <canvas id="game-canvas" tabindex="0"></canvas>
       <canvas id="minimap-canvas" title="Click or press M to expand map"></canvas>
-      <div id="focus-prompt">🖱️ Click here to play &nbsp;|&nbsp; ⌨️ Space: Attack · Shift(hold): Shield · M: Map</div>
+      <div id="focus-prompt">🖱️ Click here to play &nbsp;|&nbsp; ⌨️ Space: Attack · Shift/Q: Shield · M: Map</div>
     </div>
 
     <!-- MOBILE DUAL-THUMB CONTROLS -->
