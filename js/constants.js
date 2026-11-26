@@ -23,16 +23,20 @@ const C = {
   E_PLAYER:           'player',
   E_SLIME:            'slime',
   E_BLACK_KNIGHT:     'black_knight',
+  E_CASTLE_KNIGHT:    'castle_knight',
+  E_ENEMY_WIZARD:     'enemy_wizard',
+  E_RED_KNIGHT:       'red_knight',
   E_GHOST:            'ghost',
   E_DARK_CHAMPION:    'dark_champion',
   E_SPIDER:           'spider',
   E_BOSS:             'boss',
 
-  // Item types (coins/gems removed — only hearts, keys, potions)
+  // Item types
   I_HEART:        'heart',
   I_KEY:          'key',
   I_POTION:       'potion',
   I_POTION_LARGE: 'potion_large',
+  I_EMBLEM:       'emblem',
 
   // Colors (canvas draw)
   COL: {
@@ -99,7 +103,7 @@ const C = {
   WIZARD_FIREBALL_RANGE: 5,
 
   // Power-up constants
-  FLAME_SWORD_CHARGES:    6,
+  FLAME_SWORD_CHARGES:    7,
   MANA_BOOST_DURATION: 60000,  // 60 seconds
   SPELL_CHARGES_MIN:      5,
   SPELL_CHARGES_MAX:      7,
@@ -107,24 +111,39 @@ const C = {
   // Enemy stats by type
   ENEMIES: {
     slime:          { hp: 5,  dmg: 2, speed: 0.9,  xp: 10,  color: '#5ce1e6' },
-    black_knight:   { hp: 8,  dmg: 3, speed: 1.1,  xp: 15,  color: '#1e1e2a' },
+    black_knight:   { hp: 8,  dmg: 3, speed: 1.1,  xp: 15,  color: '#6d28d9' },
+    castle_knight:  { hp: 8,  dmg: 3, speed: 1.1,  xp: 15,  color: '#6d28d9' },
+    enemy_wizard:   { hp: 6,  dmg: 1, speed: 1.05, xp: 20,  color: '#38bdf8' },
+    red_knight:     { hp: 32, dmg: 3, speed: 0.95, xp: 55,  color: '#dc2626' },
     ghost:          { hp: 7,  dmg: 3, speed: 1.25, xp: 18,  color: '#f0f0ff' },
-    dark_champion:  { hp: 16, dmg: 4, speed: 1.0,  xp: 45,  color: '#2a2a3a' },
+    dark_champion:  { hp: 32, dmg: 3, speed: 0.95, xp: 55,  color: '#dc2626' },
     spider:         { hp: 14, dmg: 3, speed: 0.85, xp: 45,  color: '#a855f7' },
-    boss:           { hp: 60, dmg: 5, speed: 0.65, xp: 250, color: '#c0202a' },
+    boss:           { hp: 75, dmg: 5, speed: 0.65, xp: 300, color: '#475569' },
   },
 
   // Floor config
-  FLOORS: 5,
+  FLOORS: 6,
   SPAWN_BLOCKS_MIN: 10,
   SPAWN_BLOCKS_MAX: 15,
   KEYS_NEEDED: 1,
 
+  // 7-Labyrinth World Map
+  LABYRINTHS: [
+    { id: 1, name: "Duke Wiston's Castle", subtitle: 'Floors 1–6 · The Dark Knight', unlocked: true,  theme: '#9333ea' },
+    { id: 2, name: 'The Sunken Catacombs', subtitle: 'Floors 1–6 · Coming Soon',     unlocked: false, theme: '#0ea5e9' },
+    { id: 3, name: 'Ashen Keep',           subtitle: 'Floors 1–6 · Coming Soon',     unlocked: false, theme: '#f97316' },
+    { id: 4, name: 'Blighted Hollows',     subtitle: 'Floors 1–6 · Coming Soon',     unlocked: false, theme: '#22c55e' },
+    { id: 5, name: 'Obsidian Spire',       subtitle: 'Floors 1–6 · Coming Soon',     unlocked: false, theme: '#6366f1' },
+    { id: 6, name: 'The Abyssal Gate',     subtitle: 'Floors 1–6 · Coming Soon',     unlocked: false, theme: '#e11d48' },
+    { id: 7, name: 'The Underworld',       subtitle: 'Final Labyrinth · Coming Soon',unlocked: false, theme: '#dc2626' },
+  ],
+
   // Score values
   SCORE: {
-    heart: 0, key: 0,
-    enemy_slime: 10, enemy_black_knight: 15, enemy_ghost: 18,
-    enemy_dark_champion: 45, enemy_spider: 45, enemy_boss: 250,
+    heart: 0, key: 0, emblem: 500,
+    enemy_slime: 10, enemy_black_knight: 15, enemy_castle_knight: 15,
+    enemy_enemy_wizard: 20, enemy_red_knight: 55, enemy_ghost: 18,
+    enemy_dark_champion: 55, enemy_spider: 45, enemy_boss: 300,
     floor_clear: 200,
   },
 
@@ -133,10 +152,11 @@ const C = {
 
   // Lore & Floor Design
   FLOOR_LORE: {
-    1: { name: 'THE MOSSBOUND THRESHOLD', text: 'Once the outer ward of Oakhaven, now choked by creeping rot and watchful slimes.' },
-    2: { name: 'THE OSSUARY GALLERIES',   text: 'Black Knights patrol these halls, sworn to the Hollow Warden even in death.' },
-    3: { name: 'THE WHISPERING CATACOMBS',text: 'Torches flicker without wind. Restless shades guard the sealed relics of the old king.' },
-    4: { name: 'THE ASHEN CRUCIBLE',      text: 'Soot-stained flagstones burn warm underfoot. The air tastes of iron and ancient oaths.' },
-    5: { name: 'THE OBSIDIAN SANCTUM',    text: 'The Crimson Rider awaits atop his pale steed. Only the worthy leave this arena alive.' },
+    1: { name: 'OUTER COURTYARD',      text: "Castle Knights in purple robes guard Duke Wiston's outer walls." },
+    2: { name: 'ARCANE GALLERY',       text: 'Castle Wizards join the garrison, hurling bolts of lightning.' },
+    3: { name: 'CRIMSON BARRACKS',     text: 'Heavy Red Knights patrol these halls with broadswords.' },
+    4: { name: 'THE TRAPPED ARMORY',   text: 'Combat triggers hidden black bombs and wall arrow traps.' },
+    5: { name: 'THE GREAT GATEHOUSE',  text: 'Defeat the Key-Bearing Red Knight to unlock the Big Gate.' },
+    6: { name: "THE DARK KNIGHT'S HALL", text: 'A narrow corridor. Use the side alcoves to evade the gray steed.' },
   },
 };

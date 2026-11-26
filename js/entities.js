@@ -312,12 +312,15 @@ class Enemy {
     this.isAggro = false;
     this.lastPlayerPos = null;
     this.stunTimer = 0;
+    this.burnTimer = 0;
     this.hitFlashTimer = 0;
     this.attackDash = null;
     this.attackCooldown = 0;
+    this.boltCooldown = 1200 + Math.floor(Math.random() * 1000);
+    this.hasKey = false;
   }
 
-  update(dt, player, grid, rows, cols, onHitPlayer) {
+  update(dt, player, grid, rows, cols, onHitPlayer, onShootBolt) {
     if (!this.alive) return;
     this.animTimer += dt;
     if (this.animTimer > 120) { this.frame++; this.animTimer = 0; }
@@ -342,10 +345,18 @@ class Enemy {
 
     if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    if (this.boltCooldown > 0) this.boltCooldown = Math.max(0, this.boltCooldown - dt);
     if (this.attackDash) {
       this.attackDash.timer += dt;
       if (this.attackDash.timer >= this.attackDash.duration) this.attackDash = null;
     }
+
+    // Flame Sword burn panic stun — cannot move or attack, panics in agony
+    if (this.burnTimer > 0) {
+      this.burnTimer = Math.max(0, this.burnTimer - dt);
+      return;
+    }
+
     if (this.stunTimer > 0) { this.stunTimer -= dt; return; }
 
     this.moveTimer += dt;
@@ -363,6 +374,17 @@ class Enemy {
     }
 
     this.lastPlayerPos = { r: player.r, c: player.c };
+
+    // Enemy Wizard: ranged lightning bolt when in line of sight (2..6 tiles)
+    if (this.type === 'enemy_wizard' && dist >= 2 && dist <= 6 && this.boltCooldown <= 0) {
+      const dr = player.r - this.r;
+      const dc = player.c - this.c;
+      if (dr === 0 || dc === 0) {
+        this.boltCooldown = 2300;
+        if (onShootBolt) onShootBolt(this, Math.sign(dr), Math.sign(dc));
+        return;
+      }
+    }
 
     if (dist === 1) {
       this.strikePlayer(player, onHitPlayer);
@@ -573,29 +595,30 @@ class CrimsonRider extends Enemy {
       return;
     }
 
-    // Active charge
+    // Active charge (horizontal along the narrow hall)
     if (this.isCharging) {
       this.chargeTimer -= dt;
       this.moveTimer += dt;
-      if (this.moveTimer >= 75) {
+      if (this.moveTimer >= 68) {
         this.moveTimer = 0;
         const [dr, dc] = this._chargeDelta();
         const nr = this.r + dr, nc = this.c + dc;
-        if (MazeGen.isWalkable(grid, rows, cols, nr, nc)) {
+        if (MazeGen.isWalkable(grid, rows, cols, nr, nc) && nc >= 3 && nc <= cols - 4) {
           this.r = nr; this.c = nc;
-          const cheb = Math.max(Math.abs(this.r - player.r), Math.abs(this.c - player.c));
-          if (cheb <= 2 && !this.chargeHitDone && onHitPlayer) {
+          // Player is safe if tucked into top/bottom 1-tile alcove (|this.r - player.r| >= 2)
+          if (Math.abs(this.r - player.r) <= 1 && Math.abs(this.c - player.c) <= 1 && !this.chargeHitDone && onHitPlayer) {
             this.chargeHitDone = true;
-            this.attackAnimTimer = 320;
+            this.attackAnimTimer = 380;
             onHitPlayer(this, this.dmg, true, false); // isCharge = true
           }
         } else {
           this.isCharging = false;
+          this.chargeCooldown = this.phase === 2 ? 2200 : 3400;
         }
       }
       if (this.chargeTimer <= 0) {
         this.isCharging = false;
-        this.chargeCooldown = this.phase === 2 ? 3000 : 5000;
+        this.chargeCooldown = this.phase === 2 ? 2200 : 3400;
       }
       return;
     }
@@ -606,8 +629,7 @@ class CrimsonRider extends Enemy {
       if (this.kickWindup <= 0) {
         this.isKicking = true;
         this.kickTimer = 360;
-        const cheb = Math.max(Math.abs(this.r - player.r), Math.abs(this.c - player.c));
-        if (cheb <= 3 && onHitPlayer) {
+        if (Math.abs(this.r - player.r) <= 1 && Math.abs(this.c - player.c) <= 2 && onHitPlayer) {
           onHitPlayer(this, 4, false, true); // isKick = true
         }
       }
@@ -618,7 +640,7 @@ class CrimsonRider extends Enemy {
       this.kickTimer -= dt;
       if (this.kickTimer <= 0) {
         this.isKicking = false;
-        this.kickCooldown = 5500;
+        this.kickCooldown = 5000;
       }
       return;
     }
@@ -628,40 +650,41 @@ class CrimsonRider extends Enemy {
       this.chargeDir = player.c < this.c ? 'left' : 'right';
     }
 
-    const cheb = Math.max(Math.abs(this.r - player.r), Math.abs(this.c - player.c));
+    const distC = Math.abs(this.c - player.c);
+    const distR = Math.abs(this.r - player.r);
 
-    // Random charge when player is 4+ tiles away
-    if (this.chargeCooldown <= 0 && cheb >= 4 && this.specialCooldown <= 0) {
-      const dr = player.r - this.r;
-      const dc = player.c - this.c;
-      if (Math.abs(dc) >= Math.abs(dr)) {
-        this.chargeDir = dc > 0 ? 'right' : 'left';
-      } else {
-        this.chargeDir = dr > 0 ? 'down' : 'up';
-      }
-      this.chargeWindup = 800;
-      this.specialCooldown = 2000;
+    // Charge left/right along the narrow hall when player is 3+ tiles away horizontally
+    if (this.chargeCooldown <= 0 && distC >= 3 && this.specialCooldown <= 0) {
+      this.chargeDir = player.c < this.c ? 'left' : 'right';
+      this.chargeWindup = 750;
+      this.specialCooldown = 1800;
       return;
     }
 
-    // Telegraphed horse kick when player is close
-    if (this.kickCooldown <= 0 && cheb <= 2 && Math.random() < 0.35) {
-      this.kickWindup = 1000;
+    // Telegraphed horse kick when player is close in the hall
+    if (this.kickCooldown <= 0 && distR <= 1 && distC <= 2 && Math.random() < 0.35) {
+      this.kickWindup = 900;
       return;
     }
 
-    // Normal walk & lance strike (range = 2 tiles for 5x boss)
+    // Normal walk & lance strike along center hall (never enter 1-tile safe alcoves)
     this.moveTimer += dt;
     if (this.moveTimer < this.moveInterval) return;
     this.moveTimer = 0;
 
-    if (cheb <= 2) {
-      this.attackAnimTimer = 320;
+    if (distR <= 1 && distC <= 2) {
+      this.attackAnimTimer = 380;
       this.strikePlayer(player, onHitPlayer);
       return;
     }
 
-    this._chasePlayer(player, grid, rows, cols);
+    const centerR = Math.floor(rows / 2);
+    const stepC = Math.sign(player.c - this.c);
+    const nc = this.c + stepC;
+    if (stepC !== 0 && MazeGen.isWalkable(grid, rows, cols, centerR, nc) && nc >= 3 && nc <= cols - 4) {
+      this.r = centerR;
+      this.c = nc;
+    }
   }
 
   _chargeDelta() {
@@ -704,11 +727,14 @@ const EntityFactory = {
 
     if (bossFloor) {
       const centerR = Math.floor(rows / 2);
-      const centerC = Math.floor(cols / 2);
-      enemies.push(new CrimsonRider(centerR, centerC, floor));
-      return enemies; // Floor 5 is a dedicated Boss Arena
+      const bossC = Math.floor(cols * 0.72);
+      const boss = new CrimsonRider(centerR, bossC, floor);
+      boss.chargeDir = 'left';
+      enemies.push(boss);
+      return enemies; // Floor 6 is The Dark Knight's narrow hall
     }
 
+    // Shrine guard
     for (let r = 1; r < rows - 1; r++) {
       for (let c = 1; c < cols - 1; c++) {
         if (grid[r][c] === C.T_SAVEPOINT) {
@@ -717,17 +743,22 @@ const EntityFactory = {
             .filter(p => !enemies.some(e => e.r === p.r && e.c === p.c));
           if (near.length > 0) {
             const mp = near[Math.floor(Math.random() * near.length)];
-            const miniType = (floor % 2 === 1) ? 'dark_champion' : 'spider';
-            if (miniType === 'spider') enemies.push(new Spider(mp.r, mp.c, floor));
-            else enemies.push(new Enemy('dark_champion', mp.r, mp.c, floor));
+            const guardType = floor >= 3 ? 'red_knight' : 'castle_knight';
+            enemies.push(new Enemy(guardType, mp.r, mp.c, floor));
           }
         }
       }
     }
 
-    const types = floor < 3
-      ? ['slime','slime','black_knight']
-      : ['slime','black_knight','ghost','black_knight'];
+    // Labyrinth 1 (Duke Wiston's Castle) — No slimes!
+    let types;
+    if (floor === 1) {
+      types = ['castle_knight'];
+    } else if (floor === 2) {
+      types = ['castle_knight', 'castle_knight', 'enemy_wizard'];
+    } else {
+      types = ['castle_knight', 'castle_knight', 'enemy_wizard', 'red_knight'];
+    }
 
     const shuffled = shuffle([...positions]).slice(0, count);
     shuffled.forEach(pos => {
@@ -737,7 +768,35 @@ const EntityFactory = {
       }
     });
 
+    // Floor 5: Ensure a marked Key-Bearing Red Knight exists to drop the Big Gate Key
+    if (floor === 5) {
+      let keyKnight = enemies.find(e => e.type === 'red_knight');
+      if (!keyKnight) {
+        const pos = positions.find(p => !enemies.some(e => e.r === p.r && e.c === p.c)) || positions[0];
+        if (pos) {
+          keyKnight = new Enemy('red_knight', pos.r, pos.c, floor);
+          enemies.push(keyKnight);
+        }
+      }
+      if (keyKnight) keyKnight.hasKey = true;
+    }
+
     return enemies;
+  },
+
+  spawnTraps(grid, rows, cols, floor, playerStart) {
+    if (floor !== 4) return [];
+    const positions = MazeGen.getFloorPositions(grid, rows, cols, playerStart)
+      .filter(p => Math.abs(p.r - playerStart.r) + Math.abs(p.c - playerStart.c) > 4);
+    const shuffled = shuffle([...positions]).slice(0, 12);
+    return shuffled.map((pos, idx) => ({
+      r: pos.r,
+      c: pos.c,
+      kind: idx % 2 === 0 ? 'bomb' : 'arrow',
+      armed: false,
+      fuse: 0,
+      cooldown: 0,
+    }));
   },
 
   spawnItems(grid, rows, cols, floor, playerStart, enemies) {
@@ -750,12 +809,17 @@ const EntityFactory = {
     const items = [];
     const shuffled = shuffle([...positions]);
 
-    const keyPos = shuffled.shift();
-    if (keyPos) items.push(new Item(C.I_KEY, keyPos.r, keyPos.c));
+    // Floor 5 key drops from Key-Bearing Red Knight; Floor 6 Emblem drops from Dark Knight Boss
+    if (floor < 5) {
+      const keyPos = shuffled.shift();
+      if (keyPos) items.push(new Item(C.I_KEY, keyPos.r, keyPos.c));
+    }
 
-    const loot = shuffled.slice(0, 4 + floor);
-    loot.forEach(pos => {
-      items.push(new Item(C.I_HEART, pos.r, pos.c));
+    // Slightly increased HP drops (hearts + small potions)
+    const lootCount = floor === C.FLOORS ? 4 : (6 + floor);
+    const loot = shuffled.slice(0, lootCount);
+    loot.forEach((pos, idx) => {
+      items.push(new Item(idx % 3 === 0 ? C.I_POTION : C.I_HEART, pos.r, pos.c));
     });
 
     return items;

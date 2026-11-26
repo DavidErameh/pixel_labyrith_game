@@ -112,6 +112,77 @@ html, body {
   color: var(--text-dim);
 }
 
+/* ── WORLD MAP SCREEN ─────────────────────────────────────── */
+#screen-worldmap {
+  background: radial-gradient(ellipse at 50% 15%, #1a1030 0%, #07070c 75%);
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding: 1.5rem 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+.worldmap-container {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 1rem;
+  max-width: 560px; width: 95%;
+  margin: auto 0;
+}
+.worldmap-title {
+  font-size: clamp(0.7rem, 2.6vw, 1.05rem);
+  color: var(--gold);
+  text-align: center;
+  text-shadow: 0 0 12px rgba(255, 140, 0, 0.5);
+}
+.worldmap-sub {
+  font-size: clamp(0.32rem, 1.1vw, 0.44rem);
+  color: var(--text-dim);
+  text-align: center;
+}
+.worldmap-list {
+  display: flex; flex-direction: column;
+  gap: 0.65rem; width: 100%;
+}
+.worldmap-node {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--dungeon-stone);
+  border: 2px solid var(--dungeon-mid);
+  text-align: left;
+  transition: transform 0.12s, border-color 0.15s, box-shadow 0.15s;
+}
+.worldmap-node.unlocked {
+  border-color: var(--gold);
+  cursor: pointer;
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.2);
+}
+.worldmap-node.unlocked:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 22px rgba(255, 215, 0, 0.4);
+}
+.worldmap-node.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.worldmap-node-left { display: flex; flex-direction: column; gap: 0.35rem; }
+.worldmap-node-name { font-size: clamp(0.45rem, 1.5vw, 0.62rem); color: var(--text-light); }
+.worldmap-node.unlocked .worldmap-node-name { color: var(--gold); }
+.worldmap-node-sub { font-size: clamp(0.3rem, 1vw, 0.4rem); color: var(--text-dim); }
+.worldmap-node-badge {
+  font-size: 0.42rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--dungeon-mid);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.worldmap-node.unlocked .worldmap-node-badge {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.worldmap-node.cleared .worldmap-node-badge {
+  border-color: var(--green);
+  color: var(--green);
+}
+
 /* ── CLASS SELECT SCREEN ──────────────────────────────────── */
 #screen-classselect {
   background: radial-gradient(ellipse at 50% 20%, #1a0a2e 0%, #0a0a0f 70%);

@@ -69,13 +69,43 @@ const Sound = (() => {
     src.stop(now + duration);
   }
 
-  // ── SFX: Knight sword whoosh + metallic ring ───────────────
+  // ── SFX: Knight sword swing (steel-against-steel clash) ─────
   function swing() {
-    // Sharp blade whoosh (highpass noise)
-    _noise(0.10, 0.20, 850, 0);
-    // Metallic blade ring (two harmonics)
-    _tone(1380, 540, 0.16, 'sine', 0.10, 15);
-    _tone(2200, 880, 0.10, 'sine', 0.055, 20);
+    _noise(0.08, 0.22, 1200, 0);
+    _tone(1480, 720, 0.14, 'triangle', 0.11, 5);
+    _tone(2350, 1100, 0.10, 'sine', 0.06, 15);
+  }
+
+  // ── SFX: Steel hit landing on flesh/unarmored ("spaush") ──
+  function hitFlesh() {
+    _noise(0.05, 0.18, 1300, 0);
+    _tone(1200, 600, 0.08, 'triangle', 0.08);
+    // Wet spaush / squish follow-through
+    _noise(0.14, 0.30, 0, 520, 35);
+    _tone(240, 65, 0.16, 'sine', 0.14, 40);
+  }
+
+  // ── SFX: Sharper echoing steel-against-steel on armor ─────
+  function hitArmor() {
+    _noise(0.08, 0.24, 1500, 0);
+    _tone(1650, 880, 0.18, 'triangle', 0.14);
+    _tone(2640, 1420, 0.14, 'sine', 0.09, 12);
+    // Echoing steel ring
+    _tone(1580, 820, 0.20, 'sine', 0.07, 90);
+    _tone(2520, 1320, 0.16, 'sine', 0.04, 150);
+  }
+
+  // ── SFX: Enemy Wizard lightning bolt ──────────────────────
+  function lightning() {
+    _noise(0.11, 0.22, 1600, 0);
+    _tone(920, 260, 0.14, 'sawtooth', 0.12);
+    _tone(1800, 480, 0.09, 'square', 0.06, 20);
+  }
+
+  // ── SFX: Trap bomb / arrow trigger ────────────────────────
+  function trapBoom() {
+    _noise(0.22, 0.34, 0, 380);
+    _tone(140, 42, 0.25, 'sawtooth', 0.18);
   }
 
   // ── SFX: Sword hitting flesh / bone ───────────────────────
@@ -189,7 +219,8 @@ const Sound = (() => {
   document.addEventListener('pointerdown', _unlockAudio, { once: true, passive: true });
 
   return {
-    swing, hit, kill, hurt, pickup, key, unlock, clash, save,
+    swing, hit, hitFlesh, hitArmor, lightning, trapBoom,
+    kill, hurt, pickup, key, unlock, clash, save,
     block, parry, web, squish, enemySlash, potion, fireball,
     toggleMute, isMuted
   };

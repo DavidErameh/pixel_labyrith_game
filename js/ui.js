@@ -117,17 +117,44 @@ const UI = (() => {
     document.getElementById('overlay-gameover').classList.remove('hidden');
   }
 
-  let bannerTimer = null;
-  function showFloorBanner(floor) {
-    const banner = document.getElementById('floor-banner');
-    const lore = C.FLOOR_LORE && C.FLOOR_LORE[floor];
-    if (!banner || !lore) return;
-    document.getElementById('floor-banner-sub').textContent = `FLOOR ${floor} OF ${C.FLOORS}`;
-    document.getElementById('floor-banner-title').textContent = lore.name;
-    document.getElementById('floor-banner-text').textContent = lore.text;
-    banner.classList.remove('hidden');
-    clearTimeout(bannerTimer);
-    bannerTimer = setTimeout(() => banner.classList.add('hidden'), 3800);
+  function showFloorBanner() {
+    // Generic floor pop-ups removed in V2
+  }
+
+  const CLEARED_KEY = 'pixelLabyrinth_cleared';
+  function getClearedLabyrinths() {
+    try { return JSON.parse(localStorage.getItem(CLEARED_KEY)) || []; }
+    catch { return []; }
+  }
+  function markLabyrinthCleared(id) {
+    const list = getClearedLabyrinths();
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem(CLEARED_KEY, JSON.stringify(list));
+    }
+  }
+  function renderWorldMap(onSelectLabyrinth) {
+    const container = document.getElementById('worldmap-list');
+    if (!container) return;
+    const cleared = getClearedLabyrinths();
+    container.innerHTML = '';
+    (C.LABYRINTHS || []).forEach(lab => {
+      const isCleared = cleared.includes(lab.id);
+      const div = document.createElement('div');
+      div.className = `worldmap-node ${lab.unlocked ? 'unlocked' : 'locked'}${isCleared ? ' cleared' : ''}`;
+      const badgeText = !lab.unlocked ? '🔒 LOCKED' : (isCleared ? '✓ CLEARED' : '▶ ENTER');
+      div.innerHTML = `
+        <div class="worldmap-node-left">
+          <div class="worldmap-node-name">${lab.id}. ${lab.name}</div>
+          <div class="worldmap-node-sub">${lab.subtitle}</div>
+        </div>
+        <div class="worldmap-node-badge">${badgeText}</div>
+      `;
+      if (lab.unlocked && onSelectLabyrinth) {
+        div.addEventListener('click', () => onSelectLabyrinth(lab));
+      }
+      container.appendChild(div);
+    });
   }
 
   function showLore(text) {
@@ -330,6 +357,7 @@ const UI = (() => {
     updateShield, setClassBadge, hideMpBar,
     showGameOver, showLevelUp, showVictory, hideAllOverlays,
     showFloorBanner, showLore, saveProgress, loadProgress, clearProgress,
+    renderWorldMap, markLabyrinthCleared,
     getScores, saveScore, renderLeaderboard, animateTitleBg, animateClassSelectPreviews,
   };
 })();

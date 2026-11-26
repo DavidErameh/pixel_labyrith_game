@@ -18,33 +18,40 @@ const MazeGen = (() => {
       }
     }
 
-    // Floor 5: Single spacious open Boss Room (no maze corridors)
+    // Floor 6: Narrow Boss Hall (Dark Knight charges left/right; top & bottom 1-tile safe alcoves)
     if (floor === C.FLOORS) {
-      for (let r = 1; r < rows - 1; r++) {
-        for (let c = 1; c < cols - 1; c++) {
+      const centerR = Math.floor(rows / 2);
+      const minC = 2;
+      const maxC = cols - 3;
+
+      // Carve narrow 3-row corridor (centerR - 1 .. centerR + 1)
+      for (let r = centerR - 1; r <= centerR + 1; r++) {
+        for (let c = minC; c <= maxC; c++) {
           grid[r][c] = C.T_FLOOR;
         }
       }
-      // Four spaced cover pillars
-      const centerR = Math.floor(rows / 2);
-      const centerC = Math.floor(cols / 2);
-      [
-        [centerR - 6, centerC - 6], [centerR - 6, centerC + 6],
-        [centerR + 6, centerC - 6], [centerR + 6, centerC + 6],
-      ].forEach(([pr, pc]) => {
-        grid[pr][pc] = C.T_WALL;
-      });
-      // Atmospheric torches
-      [[2, 2], [2, cols - 3], [rows - 3, 2], [rows - 3, cols - 3]].forEach(([tr, tc]) => {
-        grid[tr][tc] = C.T_TORCH;
-      });
-      // Save point near entrance & 3 supply chests along the sides
-      grid[3][3] = C.T_SAVEPOINT;
-      grid[1][centerC] = C.T_CHEST;
-      grid[centerR][1] = C.T_CHEST;
-      grid[centerR][cols - 2] = C.T_CHEST;
-      // Exit door on the far wall
-      grid[rows - 2][centerC] = C.T_DOOR;
+
+      // Carve 1-tile safe alcoves at top (centerR - 2) and bottom (centerR + 2)
+      for (let c = minC + 2; c <= maxC - 2; c += 4) {
+        grid[centerR - 2][c] = C.T_FLOOR;
+        grid[centerR + 2][c] = C.T_FLOOR;
+      }
+
+      // Torches along the hall
+      for (let c = minC + 4; c <= maxC - 4; c += 8) {
+        grid[centerR - 1][c] = C.T_TORCH;
+        grid[centerR + 1][c] = C.T_TORCH;
+      }
+
+      // Save point & supply chests tucked in safe alcoves
+      grid[centerR - 2][minC + 2] = C.T_SAVEPOINT;
+      grid[centerR + 2][minC + 6] = C.T_CHEST;
+      if (maxC - 6 > minC + 6) {
+        grid[centerR - 2][maxC - 6] = C.T_CHEST;
+      }
+
+      // Final Exit Door at far right end of the hall (requires Castle Emblem)
+      grid[centerR][maxC] = C.T_DOOR;
       return grid;
     }
 
@@ -123,30 +130,6 @@ const MazeGen = (() => {
         savePlaced = true;
       }
       attempts++;
-    }
-
-    // Floor 5: Carve spacious 11x11 Boss Arena in center
-    if (floor === 5) {
-      const centerR = Math.floor(rows / 2);
-      const centerC = Math.floor(cols / 2);
-      const arenaHalf = 5; // 11x11 open arena
-      for (let r = centerR - arenaHalf; r <= centerR + arenaHalf; r++) {
-        for (let c = centerC - arenaHalf; c <= centerC + arenaHalf; c++) {
-          if (r > 0 && r < rows - 1 && c > 0 && c < cols - 1) {
-            grid[r][c] = C.T_FLOOR;
-          }
-        }
-      }
-      // Corner pillars for cover
-      const pillars = [
-        [centerR - 3, centerC - 3], [centerR - 3, centerC + 3],
-        [centerR + 3, centerC - 3], [centerR + 3, centerC + 3],
-      ];
-      pillars.forEach(([pr, pc]) => {
-        if (pr > 0 && pr < rows - 1 && pc > 0 && pc < cols - 1) {
-          grid[pr][pc] = C.T_WALL;
-        }
-      });
     }
 
     return grid;

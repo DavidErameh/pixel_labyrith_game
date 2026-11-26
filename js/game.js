@@ -73,32 +73,35 @@ class Game {
     this.exitPos = MazeGen.findExit(this.grid, this.rows, this.cols);
     this.exitUnlocked = false;
 
+    const startPos = isBoss ? { r: Math.floor(this.rows / 2), c: 2 } : { r: 1, c: 1 };
+
     this.explored = new Set();
     this.visible = new Set();
 
-    const initVis = MazeGen.computeVisibility(this.grid, this.rows, this.cols, 1, 1, C.VISION_RADIUS);
+    const initVis = MazeGen.computeVisibility(this.grid, this.rows, this.cols, startPos.r, startPos.c, C.VISION_RADIUS);
     this.visible = initVis.visible;
     initVis.explored.forEach(k => this.explored.add(k));
 
     if (!this.player || floor === 1) {
-      this.player = new Player(1, 1, this.playerClass);
+      this.player = new Player(startPos.r, startPos.c, this.playerClass);
     } else {
-      this.player.r = 1; this.player.c = 1;
-      this.player.visX = C.TILE; this.player.visY = C.TILE;
+      this.player.r = startPos.r; this.player.c = startPos.c;
+      this.player.visX = startPos.c * C.TILE; this.player.visY = startPos.r * C.TILE;
       this.player.effects = [];
       this.player.heal(2);
       if (this.player.playerClass === 'wizard') this.player.gainMp(10);
     }
 
-    this.enemies = EntityFactory.spawnEnemies(this.grid, this.rows, this.cols, floor, { r: 1, c: 1 }, isBoss);
-    this.items = EntityFactory.spawnItems(this.grid, this.rows, this.cols, floor, { r: 1, c: 1 }, this.enemies);
+    this.enemies = EntityFactory.spawnEnemies(this.grid, this.rows, this.cols, floor, startPos, isBoss);
+    this.items = EntityFactory.spawnItems(this.grid, this.rows, this.cols, floor, startPos, this.enemies);
+    this.traps = EntityFactory.spawnTraps(this.grid, this.rows, this.cols, floor, startPos);
     this.projectiles = [];
 
     this._handleResize();
     this._updateCamera();
     this._updateHUD();
     this.lastSavedPos = null;
-    this.onFloorBanner && this.onFloorBanner(floor);
+    // Generic floor pop-ups removed in V2
   }
 
   serialize() {
@@ -296,11 +299,11 @@ class Game {
       if (isCharge) {
         p.rootedTimer = 1500;
         p.addEffect('web', p.r, p.c, 'STUNNED!', '#ef4444');
-        UI.showToast('🐴 Crimson Rider Charge stunned you!');
+        UI.showToast('🐴 Dark Knight Charge stunned you!');
       } else if (isKick) {
         applyKnockback(3);
         p.addEffect('hurt', p.r, p.c, 'KICKED!', '#facc15');
-        UI.showToast('🐴 Horse Kick knocked you back!');
+        UI.showToast('🐴 Steed Kick knocked you back!');
       }
 
       if (p.takeDamage(dmg)) {
@@ -308,6 +311,16 @@ class Game {
         this.triggerShake(isCharge || isKick ? 7 : 5, 160);
         p.addEffect('hurt', p.r, p.c, `-${dmg}`, '#ff4444');
       }
+      this._triggerNearbyTraps(p.r, p.c);
+    };
+
+    // Enemy Wizard lightning bolt handler
+    const onShootBolt = (wizard, dr, dc) => {
+      Sound.lightning();
+      this.projectiles.push(new Projectile(
+        'lightning', wizard.r + dr, wizard.c + dc,
+        dc * 175, dr * 175, 2, wizard
+      ));
     };
 
     // Spider shoot handler
@@ -332,6 +345,10 @@ class Game {
     // Update enemies
     for (const e of this.enemies) {
       if (!e.alive) continue;
+      if (e.burnTimer > 0 && Math.random() < 0.35) {
+        const TT = C.TILE;
+        p.spawnParticles(e.c * TT + TT / 2, e.r * TT + TT / 2, '#ff6600', 2, 1.8);
+      }
       if (e instanceof Boss) {
         e.update(dt, p, this.grid, this.rows, this.cols, (r, c) => {
           this._spawnMinion(r, c);
@@ -339,9 +356,11 @@ class Game {
       } else if (e instanceof Spider) {
         e.update(dt, p, this.grid, this.rows, this.cols, onHitPlayer, onSpiderShoot);
       } else {
-        e.update(dt, p, this.grid, this.rows, this.cols, onHitPlayer);
+        e.update(dt, p, this.grid, this.rows, this.cols, onHitPlayer, onShootBolt);
       }
     }
+
+    this._updateTraps(dt, p);
 
     this._updateProjectiles(dt, p);
 
@@ -368,6 +387,48 @@ class Game {
     if (this.onHpUpdate) this.onHpUpdate(p.hp, p.maxHp);
   }
 
+  _triggerNearbyTraps(r, c) {
+    if (!this.traps || this.traps.length === 0) return;
+    for (const trap of this.traps) {
+      if (trap.armed || trap.cooldown > 0) continue;
+      const d = Math.abs(trap.r - r) + Math.abs(trap.c - c);
+      if (d <= 2.5) {
+        trap.armed = true;
+        trap.fuse = 650;
+      }
+    }
+  }
+
+  _updateTraps(dt, p) {
+    if (!this.traps || this.traps.length === 0) return;
+    const TT = C.TILE;
+    for (const trap of this.traps) {
+      if (trap.cooldown > 0) trap.cooldown = Math.max(0, trap.cooldown - dt);
+      if (!trap.armed) continue;
+      trap.fuse -= dt;
+      if (trap.fuse <= 0) {
+        trap.armed = false;
+        trap.cooldown = 3500;
+        Sound.trapBoom();
+        p.spawnParticles(trap.c * TT + TT / 2, trap.r * TT + TT / 2, trap.kind === 'bomb' ? '#ef4444' : '#cbd5e1', 12, 3);
+        const d = Math.abs(trap.r - p.r) + Math.abs(trap.c - p.c);
+        if (d <= 1) {
+          // Non-lethal trap: takes HP but cannot kill you (leaves >= 1 HP)
+          const rawDmg = trap.kind === 'bomb' ? 3 : 2;
+          const actualDmg = Math.min(rawDmg, Math.max(0, p.hp - 1));
+          if (actualDmg > 0) {
+            p.hp -= actualDmg;
+            this.triggerShake(5, 140);
+            p.addEffect('hurt', p.r, p.c, `-${actualDmg} TRAP!`, '#f97316');
+            this.onHpUpdate && this.onHpUpdate(p.hp, p.maxHp);
+          } else {
+            p.addEffect('hurt', p.r, p.c, 'TRAP!', '#f97316');
+          }
+        }
+      }
+    }
+  }
+
   _updateProjectiles(dt, p) {
     const TT = C.TILE;
     const ppx = p.c * TT + TT / 2;
@@ -383,6 +444,23 @@ class Game {
       if (pr < 0 || pr >= this.rows || pc < 0 || pc >= this.cols || this.grid[pr][pc] === C.T_WALL) {
         proj.alive = false;
         continue;
+      }
+
+      // Enemy lightning bolt hits player
+      if (proj.type === 'lightning') {
+        if (Math.hypot(proj.x - ppx, proj.y - ppy) < 16) {
+          proj.alive = false;
+          if (p.isBlocking()) {
+            const res = p.absorbShieldHit();
+            Sound.block();
+            p.addEffect('shield', p.r, p.c, res === 'broken' ? 'BROKE!' : 'BLOCKED', '#60a5fa');
+          } else if (p.takeDamage(proj.dmg)) {
+            Sound.hurt();
+            this.triggerShake(4, 120);
+            p.addEffect('hurt', p.r, p.c, `-${proj.dmg}`, '#38bdf8');
+          }
+          continue;
+        }
       }
 
       // Fireball hits enemy
@@ -717,7 +795,14 @@ class Game {
         p.flameSwordHits--;
         const TT2 = C.TILE;
         p.spawnParticles(enemy.c * TT2 + TT2 / 2, enemy.r * TT2 + TT2 / 2, '#ff6600', 16, 3.5);
-        this._attackEnemy(enemy, enemy.type === 'boss' ? 15 : 9999, true);
+        // 2x normal sword damage (no instant-kill) + burn panic stun on stronger mobs
+        this._attackEnemy(enemy, p.dmg * 2, true);
+        if (enemy.alive && (enemy.type === 'red_knight' || enemy.type === 'dark_champion' || enemy.type === 'boss')) {
+          enemy.burnTimer = 1600;
+          enemy.isCharging = false;
+          enemy.chargeWindup = 0;
+          p.addEffect('hit', enemy.r, enemy.c, '🔥 BURN!', '#ff8c00');
+        }
         if (p.flameSwordHits === 0) UI.showToast('🔥 Flame Sword charges expired!');
         else UI.showToast(`🔥 Flame Slash! (${p.flameSwordHits} left)`);
       } else {
@@ -905,8 +990,15 @@ class Game {
     const cx = enemy.c * TT + TT / 2;
     const cy = enemy.r * TT + TT / 2;
 
-    // Sword whoosh / cast sound on every attack (before impact)
-    if (!isFire) Sound.swing();
+    // Sword clash + impact SFX (spaush on unarmored/wizard, echoing steel on armor)
+    this._triggerNearbyTraps(enemy.r, enemy.c);
+    if (!isFire) {
+      if (enemy.type === 'enemy_wizard' || enemy.type === 'slime' || enemy.type === 'ghost') {
+        Sound.hitFlesh();
+      } else {
+        Sound.hitArmor();
+      }
+    }
 
     p.addEffect('hit', enemy.r, enemy.c, `-${dmg}`, '#ffffff');
     p.spawnParticles(cx, cy, isFire ? '#ff8c00' : '#ffd700', 8, 2.6);
@@ -923,27 +1015,28 @@ class Game {
       p.score += C.SCORE[`enemy_${enemy.type}`] || 10;
       p.kills[enemy.type] = (p.kills[enemy.type] || 0) + 1;
       p.killsThisFloor++;
-      // Wizard: MP on kill
       p.gainMp(C.WIZARD_MP_REGEN_KILL);
       this.onScoreUpdate && this.onScoreUpdate(p.score);
 
-      // ── Potion drops ────────────────────────────────────────
+      // ── Key / Emblem & Increased HP Drops ───────────────────
+      if (enemy.hasKey) {
+        this.items.push(new Item(C.I_KEY, enemy.r, enemy.c));
+        UI.showToast('🗝️ Big Gate Key dropped!');
+      }
       if (enemy.type === 'boss') {
-        UI.showToast('👑 CRIMSON RIDER DEFEATED!');
-        this.items.push(new Item(C.I_POTION_LARGE, enemy.r, enemy.c));
-        this.items.push(new Item(C.I_HEART, enemy.r, enemy.c - 1));
-      } else if (enemy.type === 'dark_champion' || enemy.type === 'spider') {
-        // Mini-bosses: always drop large potion (+5 HP)
+        UI.showToast('🏅 DARK KNIGHT DEFEATED! Collect the Castle Emblem!');
+        this.items.push(new Item(C.I_EMBLEM, enemy.r, enemy.c));
+        this.items.push(new Item(C.I_POTION_LARGE, enemy.r, Math.max(2, enemy.c - 1)));
+      } else if (enemy.type === 'red_knight' || enemy.type === 'dark_champion' || enemy.type === 'spider') {
         this.items.push(new Item(C.I_POTION_LARGE, enemy.r, enemy.c));
         UI.showToast('🍶 Large Potion dropped! (+5 HP)');
       } else {
-        // Regular enemies: 28% chance of small potion (+2 HP)
-        if (Math.random() < 0.28) {
-          this.items.push(new Item(C.I_POTION, enemy.r, enemy.c));
+        // Increased HP drop rate (42%)
+        if (Math.random() < 0.42) {
+          this.items.push(new Item(Math.random() < 0.4 ? C.I_HEART : C.I_POTION, enemy.r, enemy.c));
         }
       }
     } else {
-      Sound.clash();
       this.triggerShake(4, 110);
       const dist = Math.abs(enemy.r - p.r) + Math.abs(enemy.c - p.c);
       if (dist === 1 && enemy.attackCooldown <= 0) {
@@ -987,7 +1080,14 @@ class Game {
       case C.I_KEY:
         p.keys++;
         Sound.key();
-        UI.showToast('🗝️ Key obtained!');
+        UI.showToast(this.floor === 5 ? '🗝️ Big Gate Key obtained!' : '🗝️ Key obtained!');
+        this.onKeysUpdate && this.onKeysUpdate(p.keys);
+        break;
+      case C.I_EMBLEM:
+        p.keys++;
+        p.score += C.SCORE.emblem || 500;
+        Sound.key();
+        UI.showToast('🏅 Castle Emblem obtained! Open the Exit Door!');
         this.onKeysUpdate && this.onKeysUpdate(p.keys);
         break;
       case C.I_POTION:
@@ -1059,8 +1159,8 @@ class Game {
           case C.T_WALL:       Sprites.drawWall(ctx, wx, wy); break;
           case C.T_FLOOR:      Sprites.drawFloor(ctx, wx, wy); break;
           case C.T_TORCH:      Sprites.drawTorch(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
-          case C.T_DOOR:       Sprites.drawDoor(ctx, wx, wy, true); break;
-          case C.T_OPEN:       Sprites.drawDoor(ctx, wx, wy, false); break;
+          case C.T_DOOR:       this.floor === 5 ? Sprites.drawBigGate(ctx, wx, wy, true) : Sprites.drawDoor(ctx, wx, wy, true); break;
+          case C.T_OPEN:       this.floor === 5 ? Sprites.drawBigGate(ctx, wx, wy, false) : Sprites.drawDoor(ctx, wx, wy, false); break;
           case C.T_CHEST:      Sprites.drawChest(ctx, wx, wy, false); break;
           case C.T_CHEST_OPEN: Sprites.drawChest(ctx, wx, wy, true); break;
           case C.T_SAVEPOINT:  Sprites.drawSavePoint(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
@@ -1076,6 +1176,15 @@ class Game {
           ctx.fillRect(wx, wy, TT, TT);
         }
       }
+    }
+
+    // ── Draw Floor 4 Traps ──
+    if (this.traps && this.traps.length > 0) {
+      this.traps.forEach(trap => {
+        const k = trap.r * 1000 + trap.c;
+        if (!this.explored.has(k)) return;
+        Sprites.drawTrap(ctx, trap.c * TT, trap.r * TT, trap, this.globalFrame);
+      });
     }
 
     // ── Draw Items ──
@@ -1102,13 +1211,16 @@ class Game {
       }
       switch (e.type) {
         case 'slime':          Sprites.drawSlime(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
+        case 'castle_knight':
         case 'black_knight':   Sprites.drawBlackKnight(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy, e.isMoving ? e.walkPhase : 0); break;
-        case 'dark_champion':  Sprites.drawDarkChampion(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy, e.isMoving ? e.walkPhase : 0); break;
+        case 'enemy_wizard':   Sprites.drawEnemyWizard(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy, e.isMoving ? e.walkPhase : 0); break;
+        case 'red_knight':
+        case 'dark_champion':  Sprites.drawDarkChampion(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy, e.isMoving ? e.walkPhase : 0, e.hasKey); break;
         case 'spider':         Sprites.drawSpider(ctx, ex, ey, e.frame, e.hp, e.maxHp, e.stunTimer > 500, edx, edy); break;
         case 'ghost':          Sprites.drawGhost(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp); break;
         case 'boss': {
           const windup = e.chargeWindup > 0 ? 'charge' : (e.kickWindup > 0 ? 'kick' : null);
-          const atkProg = e.attackAnimTimer > 0 ? 1 - (e.attackAnimTimer / 320) : 0;
+          const atkProg = e.attackAnimTimer > 0 ? 1 - (e.attackAnimTimer / 380) : 0;
           Sprites.drawCrimsonRider(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp, e.isCharging, e.isKicking, e.chargeDir, windup, atkProg, e.isMoving ? e.walkPhase : 0);
           break;
         }

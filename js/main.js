@@ -17,6 +17,11 @@
     if (id === 'screen-title') {
       updateContinueBtn();
       Music.play('title');
+    } else if (id === 'screen-worldmap') {
+      Music.play('title');
+      UI.renderWorldMap(() => {
+        showScreen('screen-classselect');
+      });
     } else if (id === 'screen-classselect') {
       Music.play('classSelect');
       UI.animateClassSelectPreviews();
@@ -53,8 +58,13 @@
 
   document.getElementById('btn-newgame').addEventListener('click', () => {
     startFloorTarget = 1;
-    showScreen('screen-classselect');
+    showScreen('screen-worldmap');
   });
+
+  const backWmBtn = document.getElementById('btn-back-worldmap');
+  if (backWmBtn) {
+    backWmBtn.addEventListener('click', () => showScreen('screen-title'));
+  }
 
   document.getElementById('btn-boss-floor').addEventListener('click', () => {
     startFloorTarget = C.FLOORS;
@@ -169,6 +179,7 @@
     game.onVictory = (score) => {
       Music.stop();
       UI.clearProgress();
+      UI.markLabyrinthCleared(1);
       UI.showVictory(score);
     };
 
@@ -178,7 +189,7 @@
     } else {
       game.startFloor(startFloorTarget);
       if (startFloorTarget === C.FLOORS) {
-        UI.showToast('👑 Entered Boss Floor — Crimson Rider awaits!');
+        UI.showToast('👑 Entered Floor 6 — The Dark Knight awaits!');
       }
       startFloorTarget = 1;
     }
@@ -529,7 +540,7 @@
   document.getElementById('btn-vic-menu').addEventListener('click', () => {
     UI.hideAllOverlays();
     if (game) { game.destroy(); game = null; }
-    showScreen('screen-title');
+    showScreen('screen-worldmap');
   });
 
   // ── Prevent mobile zoom ─────────────────────────────────────
