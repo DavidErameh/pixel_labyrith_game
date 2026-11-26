@@ -272,28 +272,27 @@
     dpadBound = true;
 
     const dpadMap = {
-      'dpad-up':    { r: -1, c: 0 },
-      'dpad-down':  { r:  1, c: 0 },
-      'dpad-left':  { r:  0, c: -1 },
-      'dpad-right': { r:  0, c:  1 },
+      'dpad-up':    'ArrowUp',
+      'dpad-down':  'ArrowDown',
+      'dpad-left':  'ArrowLeft',
+      'dpad-right': 'ArrowRight',
     };
 
-    Object.entries(dpadMap).forEach(([id, dir]) => {
+    Object.entries(dpadMap).forEach(([id, keyName]) => {
       const btn = document.getElementById(id);
       if (!btn) return;
-      let holdInterval = null;
       function pressStart() {
         if (!game) return;
-        game.dpadPress(dir.r, dir.c);
+        game.keyDown(keyName);
         btn.classList.add('pressed');
-        holdInterval = setInterval(() => { if (game) game.dpadPress(dir.r, dir.c); }, 240);
       }
       function pressEnd() {
         btn.classList.remove('pressed');
-        clearInterval(holdInterval);
+        if (game) game.keyUp(keyName);
       }
-      btn.addEventListener('touchstart', e => { e.preventDefault(); pressStart(); }, { passive: false });
-      btn.addEventListener('touchend', e => { e.preventDefault(); pressEnd(); }, { passive: false });
+      btn.addEventListener('touchstart', e => { if (e.cancelable) e.preventDefault(); pressStart(); }, { passive: false });
+      btn.addEventListener('touchend', e => { if (e.cancelable) e.preventDefault(); pressEnd(); }, { passive: false });
+      btn.addEventListener('touchcancel', pressEnd);
       btn.addEventListener('mousedown', pressStart);
       btn.addEventListener('mouseup', pressEnd);
       btn.addEventListener('mouseleave', pressEnd);
@@ -322,11 +321,13 @@
         shieldBtn.classList.add('pressed');
         game.startHoldShield && game.startHoldShield();
       }, { passive: false });
-      shieldBtn.addEventListener('touchend', e => {
-        if (e.cancelable) e.preventDefault();
+      const releaseShield = e => {
+        if (e && e.cancelable) e.preventDefault();
         shieldBtn.classList.remove('pressed');
-        game.stopHoldShield && game.stopHoldShield();
-      }, { passive: false });
+        game && game.stopHoldShield && game.stopHoldShield();
+      };
+      shieldBtn.addEventListener('touchend', releaseShield, { passive: false });
+      shieldBtn.addEventListener('touchcancel', releaseShield);
       shieldBtn.addEventListener('mousedown', () => { if (game) game.startHoldShield && game.startHoldShield(); shieldBtn.classList.add('pressed'); });
       shieldBtn.addEventListener('mouseup', () => { if (game) game.stopHoldShield && game.stopHoldShield(); shieldBtn.classList.remove('pressed'); });
     }
@@ -355,8 +356,14 @@
     const isHidden = ov.classList.contains('hidden');
     if (isHidden) {
       game.pause();
-      expCanvas.width = Math.min(Math.floor(window.innerWidth * 0.92), 1300);
-      expCanvas.height = Math.min(Math.floor(window.innerHeight * 0.82), 560);
+      const isPortraitMobile = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+      if (isPortraitMobile) {
+        expCanvas.width = Math.floor(window.innerWidth * 0.94);
+        expCanvas.height = Math.floor(Math.min(window.innerHeight * 0.72, window.innerWidth * 0.94));
+      } else {
+        expCanvas.width = Math.min(Math.floor(window.innerWidth * 0.92), 1300);
+        expCanvas.height = Math.min(Math.floor(window.innerHeight * 0.82), 560);
+      }
       game.renderExpandedMap(expCanvas);
       ov.classList.remove('hidden');
     } else {

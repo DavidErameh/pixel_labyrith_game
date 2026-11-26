@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0a0a0f" />
   <title>Pixel Labyrinth</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -178,20 +181,26 @@
       <div id="focus-prompt">🖱️ Click here to play &nbsp;|&nbsp; ⌨️ Space: Attack · Shift(hold): Shield · M: Map</div>
     </div>
 
-    <!-- MOBILE D-PAD -->
-    <div id="dpad" class="mobile-only">
+    <!-- MOBILE DUAL-THUMB CONTROLS -->
+    <div id="touch-move" class="mobile-only">
       <div class="dpad-row">
         <button class="dpad-btn" id="dpad-up" aria-label="Up">▲</button>
       </div>
       <div class="dpad-row">
         <button class="dpad-btn" id="dpad-left" aria-label="Left">◀</button>
-        <button class="dpad-btn dpad-center" id="dpad-action" aria-label="Attack">⚔</button>
+        <div class="dpad-spacer"></div>
         <button class="dpad-btn" id="dpad-right" aria-label="Right">▶</button>
-        <button class="dpad-btn dpad-shield" id="dpad-shield" aria-label="Shield">🛡️</button>
-        <button class="dpad-btn dpad-fire hidden" id="dpad-fire" aria-label="Fire Burst">🔥</button>
       </div>
       <div class="dpad-row">
         <button class="dpad-btn" id="dpad-down" aria-label="Down">▼</button>
+      </div>
+    </div>
+
+    <div id="touch-actions" class="mobile-only">
+      <button class="dpad-btn dpad-fire hidden" id="dpad-fire" aria-label="Fire Burst">🔥</button>
+      <div class="action-bottom-row">
+        <button class="dpad-btn dpad-shield" id="dpad-shield" aria-label="Shield">🛡️</button>
+        <button class="dpad-btn dpad-center dpad-atk" id="dpad-action" aria-label="Attack">⚔</button>
       </div>
     </div>
   </div>

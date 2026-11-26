@@ -1035,7 +1035,7 @@ class Game {
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     ctx.save();
-    const zoom = C.CAMERA_ZOOM || 1;
+    const zoom = this._getEffectiveZoom();
     ctx.scale(zoom, zoom);
     let shakeX = 0, shakeY = 0;
     if (this.shakeTimer > 0) {
@@ -1275,11 +1275,15 @@ class Game {
     }
   }
 
+  _getEffectiveZoom() {
+    return window.innerWidth < 460 ? 1.65 : (C.CAMERA_ZOOM || 1);
+  }
+
   _updateCamera() {
     const p = this.player;
     if (!p) return;
     const TT = C.TILE;
-    const zoom = C.CAMERA_ZOOM || 1;
+    const zoom = this._getEffectiveZoom();
     const viewW = this.canvas.width / zoom;
     const viewH = this.canvas.height / zoom;
     const mapW = this.cols * TT;

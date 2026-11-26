@@ -27,13 +27,14 @@
 }
 
 html, body {
-  width: 100%; height: 100%;
+  width: 100%; height: 100%; height: 100dvh;
   overflow: hidden;
   background: var(--dungeon-black);
   font-family: var(--pixel-font);
   color: var(--text-light);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  touch-action: none;
 }
 
 /* ── Screens ──────────────────────────────────────────────── */
@@ -508,48 +509,75 @@ html, body {
   border-color: var(--gold);
 }
 
-/* ── MOBILE D-PAD ─────────────────────────────────────────── */
-#dpad {
-  position: fixed; bottom: 1rem; left: 50%;
-  transform: translateX(-50%);
+/* ── MOBILE DUAL-THUMB CONTROLS ───────────────────────────── */
+#touch-move {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: max(14px, env(safe-area-inset-left));
   display: flex; flex-direction: column;
-  align-items: center; gap: 2px;
+  align-items: center; gap: 3px;
   z-index: 30;
+  touch-action: none;
+}
+#touch-actions {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  right: max(14px, env(safe-area-inset-right));
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 10px;
+  z-index: 30;
+  touch-action: none;
+}
+.action-bottom-row {
+  display: flex; align-items: flex-end; gap: 10px;
 }
 .dpad-row {
-  display: flex; gap: 2px;
+  display: flex; gap: 3px; align-items: center;
+}
+.dpad-spacer {
+  width: 52px; height: 52px;
 }
 .dpad-btn {
-  width: 56px; height: 56px;
+  width: 52px; height: 52px;
   font-size: 1.1rem;
-  background: rgba(30,30,46,0.85);
+  background: rgba(24,24,40,0.82);
   border: 2px solid var(--dungeon-mid);
+  border-radius: 10px;
   color: var(--text-light);
   cursor: pointer;
   font-family: var(--pixel-font);
   -webkit-tap-highlight-color: transparent;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.08s;
+  transition: background 0.08s, transform 0.06s;
+  touch-action: none;
 }
 .dpad-btn:active, .dpad-btn.pressed {
   background: var(--dungeon-mid);
   border-color: var(--gold);
   color: var(--gold);
+  transform: scale(0.94);
 }
 .dpad-center {
-  background: rgba(42,42,62,0.9);
+  background: rgba(42,42,62,0.88);
   border-color: var(--gold-dim);
   color: var(--gold);
 }
+.dpad-atk {
+  width: 66px; height: 66px;
+  border-radius: 50%;
+  font-size: 1.35rem;
+}
 .dpad-shield {
-  background: rgba(30, 58, 138, 0.85) !important;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: rgba(30, 58, 138, 0.82) !important;
   border-color: #60a5fa !important;
-  margin-left: 8px;
 }
 .dpad-fire {
+  width: 50px; height: 50px;
+  border-radius: 50%;
   background: rgba(120, 30, 10, 0.85) !important;
   border-color: #f97316 !important;
-  margin-left: 2px;
 }
 
 /* ── OVERLAYS ─────────────────────────────────────────────── */
@@ -638,15 +666,33 @@ html, body {
   .mobile-only { display: none !important; }
 }
 @media (pointer: coarse) {
-  #game-wrap { max-height: calc(100vh - 180px); }
+  #focus-prompt { display: none !important; }
+}
+@media (max-width: 768px) and (orientation: portrait) {
+  #expanded-map-canvas {
+    width: 94vw;
+    height: min(72dvh, 94vw);
+  }
+}
+@media (max-height: 720px), (max-width: 600px) {
+  #screen-classselect, #screen-howtoplay, #screen-leaderboard {
+    justify-content: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.5rem 0.75rem;
+  }
 }
 @media (max-width: 480px) {
   #hud { padding: 0.3rem 0.5rem; }
   #health-bar-wrap, #mp-bar-wrap { width: 55px; }
-  #minimap-canvas { width: 70px; height: 70px; }
-  .dpad-btn { width: 50px; height: 50px; font-size: 1rem; }
+  #minimap-canvas { width: 68px; height: 68px; }
+  .dpad-btn { width: 48px; height: 48px; font-size: 1rem; }
+  .dpad-spacer { width: 48px; height: 48px; }
+  .dpad-atk { width: 62px; height: 62px; font-size: 1.25rem; }
+  .dpad-shield { width: 50px; height: 50px; }
+  .dpad-fire { width: 46px; height: 46px; }
   .class-cards { flex-direction: column; align-items: center; }
-  .class-card { width: 90%; max-width: 320px; }
+  .class-card { width: 92%; max-width: 320px; }
 }
 
 /* ── ANIMATIONS ───────────────────────────────────────────── */

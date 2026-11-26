@@ -181,6 +181,13 @@ const Sound = (() => {
   function toggleMute() { muted = !muted; return muted; }
   function isMuted() { return muted; }
 
+  // Unlock Web Audio AudioContext on first mobile touch / gesture
+  function _unlockAudio() {
+    ensureCtx();
+  }
+  document.addEventListener('touchstart', _unlockAudio, { once: true, passive: true });
+  document.addEventListener('pointerdown', _unlockAudio, { once: true, passive: true });
+
   return {
     swing, hit, kill, hurt, pickup, key, unlock, clash, save,
     block, parry, web, squish, enemySlash, potion, fireball,
