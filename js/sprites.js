@@ -744,12 +744,11 @@ const Sprites = (() => {
   }
 
   // ── CRIMSON RIDER BOSS (5x size = ~160x160px) ──────────────
-  function drawCrimsonRider(ctx, x, y, frame, hp, maxHp, isCharging = false, isKicking = false, chargeDir = 'right', windupType = null) {
+  function drawCrimsonRider(ctx, x, y, frame, hp, maxHp, isCharging = false, isKicking = false, chargeDir = 'right', windupType = null, attackProgress = 0) {
     const f = frame % 8;
     const rage = hp / maxHp < 0.4;
     const cx = x + H;
     const cy = y + H;
-    const S = 5; // 5x scale
 
     ctx.save();
     // Flip horizontally if facing left
@@ -777,14 +776,36 @@ const Sprites = (() => {
       ctx.fill();
     }
 
+    // Charge speed streaks behind horse
+    if (isCharging) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 4; i++) {
+        const sy = -36 + i * 24;
+        ctx.beginPath();
+        ctx.moveTo(-64 - (f % 3) * 10, sy);
+        ctx.lineTo(-96 - (f % 3) * 14, sy);
+        ctx.stroke();
+      }
+    }
+
+    // Kick shockwave burst
+    if (isKicking) {
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.75)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(-44, 28, 22 + (f % 3) * 6, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.beginPath();
     ctx.ellipse(0, 52, 58, 16, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rear up angle during charge wind-up or kick wind-up
-    const rearAngle = (windupType === 'charge' || windupType === 'kick') ? -0.18 : 0;
+    // Rear up / buck angle
+    const rearAngle = (windupType === 'charge' || windupType === 'kick') ? -0.18 : (isKicking ? 0.14 : 0);
     ctx.rotate(rearAngle);
 
     const trot = Math.sin(f * 0.9) * (isCharging ? 10 : 4);
@@ -793,18 +814,20 @@ const Sprites = (() => {
     // Tail
     ctx.fillStyle = '#d4d0cc';
     ctx.fillRect(-56, -4, 16, 26);
-    // Back legs
+    // Back legs (buck backward during kick)
     ctx.fillStyle = '#d4d0cc';
-    ctx.fillRect(-40 + trot, 18, 12, 34);
-    ctx.fillRect(-24 - trot, 18, 12, 34);
+    const kickBackX = isKicking ? -20 : 0;
+    const kickBackY = isKicking ? -14 : 0;
+    ctx.fillRect(-40 + trot + kickBackX, 18 + kickBackY, 12, 34);
+    ctx.fillRect(-24 - trot + kickBackX, 18 + kickBackY, 12, 34);
     // Front legs
-    const frontLift = (windupType === 'charge' || isKicking) ? -14 : 0;
+    const frontLift = (windupType === 'charge') ? -14 : 0;
     ctx.fillRect(16 - trot, 18 + frontLift, 12, 34);
     ctx.fillRect(30 + trot, 18 + frontLift, 12, 34);
     // Hooves
     ctx.fillStyle = '#334155';
-    ctx.fillRect(-40 + trot, 46, 12, 6);
-    ctx.fillRect(-24 - trot, 46, 12, 6);
+    ctx.fillRect(-40 + trot + kickBackX, 46 + kickBackY, 12, 6);
+    ctx.fillRect(-24 - trot + kickBackX, 46 + kickBackY, 12, 6);
     ctx.fillRect(16 - trot, 46 + frontLift, 12, 6);
     ctx.fillRect(30 + trot, 46 + frontLift, 12, 6);
 
@@ -865,13 +888,32 @@ const Sprites = (() => {
       ctx.fillRect(-10, -84, 10, 8);
     }
 
-    // Massive Lance / Greatsword
+    // Massive Lance / Greatsword (thrusts forward on attack & couched on charge)
+    const lanceThrust = attackProgress > 0 ? Math.sin(attackProgress * Math.PI) * 28 : (isCharging ? 14 : 0);
+    const lanceTilt = attackProgress > 0 ? Math.sin(attackProgress * Math.PI) * 0.18 : 0;
+    ctx.save();
+    ctx.translate(lanceThrust, 0);
+    ctx.rotate(lanceTilt);
     ctx.fillStyle = '#cbd5e1';
     ctx.fillRect(10, -32, 68, 8);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(12, -30, 64, 2);
     ctx.fillStyle = '#ffd700';
     ctx.fillRect(4, -38, 8, 20);
+    // Sweeping lance slash arc on attack
+    if (attackProgress > 0) {
+      ctx.strokeStyle = `rgba(239, 68, 68, ${1 - attackProgress * 0.7})`;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(54, -26, 36 + attackProgress * 14, -Math.PI * 0.45, Math.PI * 0.45);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${1 - attackProgress * 0.8})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(54, -26, 32 + attackProgress * 12, -Math.PI * 0.35, Math.PI * 0.35);
+      ctx.stroke();
+    }
+    ctx.restore();
 
     ctx.restore();
 

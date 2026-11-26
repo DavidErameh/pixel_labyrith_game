@@ -18,6 +18,36 @@ const MazeGen = (() => {
       }
     }
 
+    // Floor 5: Single spacious open Boss Room (no maze corridors)
+    if (floor === C.FLOORS) {
+      for (let r = 1; r < rows - 1; r++) {
+        for (let c = 1; c < cols - 1; c++) {
+          grid[r][c] = C.T_FLOOR;
+        }
+      }
+      // Four spaced cover pillars
+      const centerR = Math.floor(rows / 2);
+      const centerC = Math.floor(cols / 2);
+      [
+        [centerR - 6, centerC - 6], [centerR - 6, centerC + 6],
+        [centerR + 6, centerC - 6], [centerR + 6, centerC + 6],
+      ].forEach(([pr, pc]) => {
+        grid[pr][pc] = C.T_WALL;
+      });
+      // Atmospheric torches
+      [[2, 2], [2, cols - 3], [rows - 3, 2], [rows - 3, cols - 3]].forEach(([tr, tc]) => {
+        grid[tr][tc] = C.T_TORCH;
+      });
+      // Save point near entrance & 3 supply chests along the sides
+      grid[3][3] = C.T_SAVEPOINT;
+      grid[1][centerC] = C.T_CHEST;
+      grid[centerR][1] = C.T_CHEST;
+      grid[centerR][cols - 2] = C.T_CHEST;
+      // Exit door on the far wall
+      grid[rows - 2][centerC] = C.T_DOOR;
+      return grid;
+    }
+
     // Recursive backtracker starting at (1,1)
     function carve(r, c) {
       const dirs = shuffle([[0,2],[0,-2],[2,0],[-2,0]]);

@@ -481,12 +481,14 @@ class CrimsonRider extends Enemy {
     this.chargeTimer = 0;
     this.chargeWindup = 0;
     this.chargeCooldown = 2500;
+    this.chargeHitDone = false;
 
     this.isKicking = false;
     this.kickTimer = 0;
     this.kickWindup = 0;
     this.kickCooldown = 3000;
 
+    this.attackAnimTimer = 0;
     this.specialCooldown = 2500;
     this.minionsSummoned = false;
     this.sizeInTiles = 5;
@@ -496,8 +498,22 @@ class CrimsonRider extends Enemy {
     if (!this.alive) return;
     this.animTimer += dt;
     if (this.animTimer > 120) { this.frame++; this.animTimer = 0; }
+    // Smooth visual interpolation
+    const targetX = this.c * C.TILE;
+    const targetY = this.r * C.TILE;
+    const lerp = 1 - Math.exp(-18 * dt / 1000);
+    this.visX += (targetX - this.visX) * lerp;
+    this.visY += (targetY - this.visY) * lerp;
+    if (Math.abs(targetX - this.visX) < 0.3) this.visX = targetX;
+    if (Math.abs(targetY - this.visY) < 0.3) this.visY = targetY;
+
     if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+    if (this.attackAnimTimer > 0) this.attackAnimTimer = Math.max(0, this.attackAnimTimer - dt);
+    if (this.attackDash) {
+      this.attackDash.timer += dt;
+      if (this.attackDash.timer >= this.attackDash.duration) this.attackDash = null;
+    }
     if (this.stunTimer > 0) { this.stunTimer -= dt; return; }
 
     if (this.phase === 1 && this.hp / this.maxHp < 0.4) {
@@ -521,6 +537,7 @@ class CrimsonRider extends Enemy {
       if (this.chargeWindup <= 0) {
         this.isCharging = true;
         this.chargeTimer = 1100;
+        this.chargeHitDone = false;
       }
       return;
     }
@@ -529,14 +546,16 @@ class CrimsonRider extends Enemy {
     if (this.isCharging) {
       this.chargeTimer -= dt;
       this.moveTimer += dt;
-      if (this.moveTimer >= 80) {
+      if (this.moveTimer >= 75) {
         this.moveTimer = 0;
         const [dr, dc] = this._chargeDelta();
         const nr = this.r + dr, nc = this.c + dc;
         if (MazeGen.isWalkable(grid, rows, cols, nr, nc)) {
           this.r = nr; this.c = nc;
-          const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
-          if (dist <= 2 && onHitPlayer) {
+          const cheb = Math.max(Math.abs(this.r - player.r), Math.abs(this.c - player.c));
+          if (cheb <= 2 && !this.chargeHitDone && onHitPlayer) {
+            this.chargeHitDone = true;
+            this.attackAnimTimer = 320;
             onHitPlayer(this, this.dmg, true, false); // isCharge = true
           }
         } else {
@@ -555,9 +574,9 @@ class CrimsonRider extends Enemy {
       this.kickWindup -= dt;
       if (this.kickWindup <= 0) {
         this.isKicking = true;
-        this.kickTimer = 300;
-        const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
-        if (dist <= 3 && onHitPlayer) {
+        this.kickTimer = 360;
+        const cheb = Math.max(Math.abs(this.r - player.r), Math.abs(this.c - player.c));
+        if (cheb <= 3 && onHitPlayer) {
           onHitPlayer(this, 4, false, true); // isKick = true
         }
       }
@@ -573,10 +592,15 @@ class CrimsonRider extends Enemy {
       return;
     }
 
-    const dist = Math.abs(this.r - player.r) + Math.abs(this.c - player.c);
+    // Face player horizontally when not charging
+    if (player.c !== this.c) {
+      this.chargeDir = player.c < this.c ? 'left' : 'right';
+    }
+
+    const cheb = Math.max(Math.abs(this.r - player.r), Math.abs(this.c - player.c));
 
     // Random charge when player is 4+ tiles away
-    if (this.chargeCooldown <= 0 && dist >= 4 && this.specialCooldown <= 0) {
+    if (this.chargeCooldown <= 0 && cheb >= 4 && this.specialCooldown <= 0) {
       const dr = player.r - this.r;
       const dc = player.c - this.c;
       if (Math.abs(dc) >= Math.abs(dr)) {
@@ -590,17 +614,18 @@ class CrimsonRider extends Enemy {
     }
 
     // Telegraphed horse kick when player is close
-    if (this.kickCooldown <= 0 && dist <= 3 && Math.random() < 0.35) {
+    if (this.kickCooldown <= 0 && cheb <= 2 && Math.random() < 0.35) {
       this.kickWindup = 1000;
       return;
     }
 
-    // Normal walk
+    // Normal walk & lance strike (range = 2 tiles for 5x boss)
     this.moveTimer += dt;
     if (this.moveTimer < this.moveInterval) return;
     this.moveTimer = 0;
 
-    if (dist <= 2) {
+    if (cheb <= 2) {
+      this.attackAnimTimer = 320;
       this.strikePlayer(player, onHitPlayer);
       return;
     }

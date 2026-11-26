@@ -391,7 +391,8 @@ class Game {
         for (const e of this.enemies) {
           if (!e.alive) continue;
           const ex = e.c * TT + TT / 2, ey = e.r * TT + TT / 2;
-          if (Math.hypot(proj.x - ex, proj.y - ey) < 18) {
+          const hitRadius = e.type === 'boss' ? 48 : 18;
+          if (Math.hypot(proj.x - ex, proj.y - ey) < hitRadius) {
             proj.alive = false;
             hitEnemy = true;
             const killed = e.takeDamage(proj.dmg);
@@ -419,7 +420,8 @@ class Game {
         for (const e of this.enemies) {
           if (!e.alive) continue;
           const ex = e.c * TT + TT / 2, ey = e.r * TT + TT / 2;
-          if (Math.hypot(proj.x - ex, proj.y - ey) < 18) {
+          const hitRadius = e.type === 'boss' ? 48 : 18;
+          if (Math.hypot(proj.x - ex, proj.y - ey) < hitRadius) {
             proj.alive = false;
             e.stunTimer = 2500;
             e.hitFlashTimer = 250;
@@ -689,9 +691,13 @@ class Game {
       return;
     }
 
+    const hitsTile = (e, r, c) => e.alive && (e.type === 'boss'
+      ? Math.max(Math.abs(e.r - r), Math.abs(e.c - c)) <= 1
+      : (e.r === r && e.c === c));
+
     let [dr, dc] = this._dirToDelta(p.dir);
     let tr = p.r + dr, tc = p.c + dc;
-    let enemy = this.enemies.find(e => e.alive && e.r === tr && e.c === tc);
+    let enemy = this.enemies.find(e => hitsTile(e, tr, tc));
 
     if (!enemy) {
       const dirs = [
@@ -699,8 +705,8 @@ class Game {
         { dir: 'left', dr: 0, dc: -1 }, { dir: 'right', dr: 0, dc: 1 },
       ];
       for (const d of dirs) {
-        const adj = this.enemies.find(e => e.alive && e.r === p.r + d.dr && e.c === p.c + d.dc);
-        if (adj) { p.dir = d.dir; dr = d.dr; dc = d.dc; tr = adj.r; tc = adj.c; enemy = adj; break; }
+        const adj = this.enemies.find(e => hitsTile(e, p.r + d.dr, p.c + d.dc));
+        if (adj) { p.dir = d.dir; dr = d.dr; dc = d.dc; tr = p.r + d.dr; tc = p.c + d.dc; enemy = adj; break; }
       }
     }
 
@@ -1085,7 +1091,7 @@ class Game {
     this.enemies.forEach(e => {
       if (!e.alive) return;
       const k = e.r * 1000 + e.c;
-      if (!this.visible.has(k)) return;
+      if (!this.visible.has(k) && e.type !== 'boss') return;
       const ex = e.visX != null ? e.visX : e.c * TT;
       const ey = e.visY != null ? e.visY : e.r * TT;
       let edx = 0, edy = 0;
@@ -1102,7 +1108,8 @@ class Game {
         case 'ghost':          Sprites.drawGhost(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp); break;
         case 'boss': {
           const windup = e.chargeWindup > 0 ? 'charge' : (e.kickWindup > 0 ? 'kick' : null);
-          Sprites.drawCrimsonRider(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp, e.isCharging, e.isKicking, e.chargeDir, windup);
+          const atkProg = e.attackAnimTimer > 0 ? 1 - (e.attackAnimTimer / 320) : 0;
+          Sprites.drawCrimsonRider(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp, e.isCharging, e.isKicking, e.chargeDir, windup, atkProg);
           break;
         }
       }
