@@ -424,6 +424,45 @@
   }
 
   document.getElementById('btn-pause').addEventListener('click', togglePause);
+
+  // ── Fullscreen & Orientation (Mobile & Desktop) ─────────────
+  const fsBtn = document.getElementById('btn-fullscreen');
+  function toggleFullscreen() {
+    const docEl = document.documentElement;
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!isFs) {
+      const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+      if (req) {
+        Promise.resolve(req.call(docEl)).catch(() => {
+          UI.showToast('📱 Tip: Add to Home Screen for fullscreen!');
+        });
+      } else {
+        UI.showToast('📱 Tip: Add to Home Screen for fullscreen!');
+      }
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) Promise.resolve(exit.call(document)).catch(() => {});
+    }
+  }
+  if (fsBtn) fsBtn.addEventListener('click', toggleFullscreen);
+
+  function handleViewportChange() {
+    if (!game) return;
+    requestAnimationFrame(() => {
+      game._handleResize();
+      game._updateCamera && game._updateCamera();
+    });
+  }
+  window.addEventListener('orientationchange', () => setTimeout(handleViewportChange, 150));
+  document.addEventListener('fullscreenchange', handleViewportChange);
+  document.addEventListener('webkitfullscreenchange', handleViewportChange);
+
+  // ── PWA Service Worker ──────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
   document.getElementById('btn-resume').addEventListener('click', () => {
     game && game.paused && togglePause();
   });

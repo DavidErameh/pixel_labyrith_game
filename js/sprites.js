@@ -127,9 +127,11 @@ const Sprites = (() => {
   // ── ENTITIES ───────────────────────────────────────────────
 
   // ── KNIGHT (Player class: knight) ─────────────────────────
-  function drawKnight(ctx, x, y, dir, frame, shieldActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false, flameSwordActive = false) {
+  function drawKnight(ctx, x, y, dir, frame, shieldActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false, flameSwordActive = false, walkPhase = 0) {
     const f = frame % 4;
-    const bobY = (f < 2) ? 0 : -1;
+    const isWalking = walkPhase !== 0;
+    const stride = isWalking ? Math.sin(walkPhase) : 0;
+    const bobY = isWalking ? -Math.abs(stride) * 1.5 : (f < 2 ? 0 : -0.5);
     const isAttacking = attackProgress > 0;
     const px0 = x + dashX;
     const py = y + bobY + dashY;
@@ -186,11 +188,18 @@ const Sprites = (() => {
     px(ctx, '#b91c1c', px0 + H - 1, py - 2, 3, 4);
     px(ctx, '#ffd700', px0 + H - 1, py + 0, 2, 2);
 
-    // Greaves (leg armour)
-    px(ctx, '#8b95a5', px0 + 8, py + T - 9, 6, 9);
-    px(ctx, '#8b95a5', px0 + T - 14, py + T - 9, 6, 9);
-    px(ctx, '#e2e8f0', px0 + 9, py + T - 9, 4, 3);
-    px(ctx, '#e2e8f0', px0 + T - 13, py + T - 9, 4, 3);
+    // Greaves (leg armour) — smooth alternating stride
+    const sideWalk = (dir === 'left' || dir === 'right') ? Math.round(stride * 2.5) : 0;
+    const liftL = Math.max(0, stride) * 3;
+    const liftR = Math.max(0, -stride) * 3;
+    const lx = px0 + 8 + sideWalk;
+    const rx = px0 + T - 14 - sideWalk;
+    px(ctx, '#8b95a5', lx, py + T - 9 - liftL, 6, 7);
+    px(ctx, '#e2e8f0', lx + 1, py + T - 9 - liftL, 4, 3);
+    px(ctx, '#475569', lx, py + T - 3 - liftL, 6, 3); // left boot
+    px(ctx, '#8b95a5', rx, py + T - 9 - liftR, 6, 7);
+    px(ctx, '#e2e8f0', rx + 1, py + T - 9 - liftR, 4, 3);
+    px(ctx, '#475569', rx, py + T - 3 - liftR, 6, 3); // right boot
 
     // Sticky web if rooted
     if (isRooted) {
@@ -290,9 +299,11 @@ const Sprites = (() => {
   }
 
   // ── WIZARD (Player class: wizard) ─────────────────────────
-  function drawWizard(ctx, x, y, dir, frame, barrierActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false, mp = 60, maxMp = 60) {
+  function drawWizard(ctx, x, y, dir, frame, barrierActive, attackProgress = 0, dashX = 0, dashY = 0, isRooted = false, mp = 60, maxMp = 60, walkPhase = 0) {
     const f = frame % 4;
-    const bobY = (f < 2) ? 0 : -1;
+    const isWalking = walkPhase !== 0;
+    const stride = isWalking ? Math.sin(walkPhase) : 0;
+    const bobY = isWalking ? -Math.abs(stride) * 1.4 : (f < 2 ? 0 : -0.5);
     const px0 = x + dashX;
     const py = y + bobY + dashY;
     const isAttacking = attackProgress > 0;
@@ -311,6 +322,15 @@ const Sprites = (() => {
       ctx.arc(px0 + H, py + H, H + 10, 0, Math.PI * 2);
       ctx.stroke();
     }
+
+    // Boots peeking & stepping smoothly under robe hem
+    const wizSide = (dir === 'left' || dir === 'right') ? Math.round(stride * 2.2) : 0;
+    const wizLiftL = Math.max(0, stride) * 2.5;
+    const wizLiftR = Math.max(0, -stride) * 2.5;
+    px(ctx, '#1e1b4b', px0 + 9 + wizSide, py + T - 4 - wizLiftL, 5, 4);
+    px(ctx, '#4c1d95', px0 + 9 + wizSide, py + T - 4 - wizLiftL, 5, 2);
+    px(ctx, '#1e1b4b', px0 + T - 14 - wizSide, py + T - 4 - wizLiftR, 5, 4);
+    px(ctx, '#4c1d95', px0 + T - 14 - wizSide, py + T - 4 - wizLiftR, 5, 2);
 
     // Robe — dark navy/purple, full length with layered inner lining
     px(ctx, '#2d1b55', px0 + 7, py + 13, T - 14, T - 15);
@@ -541,10 +561,12 @@ const Sprites = (() => {
     drawEnemyHpBar(ctx, sx, sy, hp, maxHp);
   }
 
-  function drawBlackKnight(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0) {
-    const f = frame % 4;
-    const walkOff = (f < 2) ? 0 : 1;
-    const sx = x + dashX, sy = y + dashY;
+  function drawBlackKnight(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0, walkPhase = 0) {
+    const stride = walkPhase !== 0 ? Math.sin(walkPhase) : 0;
+    const bobY = walkPhase !== 0 ? -Math.abs(stride) * 1.2 : 0;
+    const liftL = Math.max(0, stride) * 3;
+    const liftR = Math.max(0, -stride) * 3;
+    const sx = x + dashX, sy = y + bobY + dashY;
 
     // Dark red cape
     px(ctx, '#4a0e0e', sx + 7, sy + 12, T - 14, 15);
@@ -563,19 +585,23 @@ const Sprites = (() => {
     // Pauldrons
     px(ctx, '#111118', sx + 4, sy + 14, 5, 6);
     px(ctx, '#111118', sx + T - 9, sy + 14, 5, 6);
-    // Greaves
-    px(ctx, '#1e1e2a', sx + 9, sy + 25, 5, 7 - walkOff);
-    px(ctx, '#1e1e2a', sx + T - 14, sy + 25, 5, 7 + walkOff);
+    // Greaves & boots — smooth alternating stride
+    px(ctx, '#1e1e2a', sx + 9, sy + 25 - liftL, 5, 5);
+    px(ctx, '#0f0f16', sx + 9, sy + 29 - liftL, 5, 3);
+    px(ctx, '#1e1e2a', sx + T - 14, sy + 25 - liftR, 5, 5);
+    px(ctx, '#0f0f16', sx + T - 14, sy + 29 - liftR, 5, 3);
     // Dark sword
     px(ctx, '#3a3a4e', sx + T - 4, sy + 5, 3, 19);
     px(ctx, '#111118', sx + T - 6, sy + 18, 7, 2);
     drawEnemyHpBar(ctx, sx, sy, hp, maxHp);
   }
 
-  function drawDarkChampion(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0) {
-    const f = frame % 4;
-    const walkOff = (f < 2) ? 0 : 1;
-    const sx = x + dashX, sy = y + dashY;
+  function drawDarkChampion(ctx, x, y, frame, hp, maxHp, dashX = 0, dashY = 0, walkPhase = 0) {
+    const stride = walkPhase !== 0 ? Math.sin(walkPhase) : 0;
+    const bobY = walkPhase !== 0 ? -Math.abs(stride) * 1.2 : 0;
+    const liftL = Math.max(0, stride) * 3;
+    const liftR = Math.max(0, -stride) * 3;
+    const sx = x + dashX, sy = y + bobY + dashY;
 
     // Dark crimson cape
     px(ctx, '#5a0c0c', sx + 6, sy + 11, T - 12, 17);
@@ -597,9 +623,11 @@ const Sprites = (() => {
     px(ctx, '#2d2d3e', sx + T - 8, sy + 13, 6, 7);
     px(ctx, '#c4a030', sx + 3, sy + 13, 4, 2);
     px(ctx, '#c4a030', sx + T - 7, sy + 13, 4, 2);
-    // Greaves
-    px(ctx, '#1e1e2a', sx + 8, sy + 26, 6, 6 - walkOff);
-    px(ctx, '#1e1e2a', sx + T - 14, sy + 26, 6, 6 + walkOff);
+    // Greaves & gold-trimmed sabatons — smooth alternating stride
+    px(ctx, '#1e1e2a', sx + 8, sy + 25 - liftL, 6, 4);
+    px(ctx, '#c4a030', sx + 8, sy + 29 - liftL, 6, 3);
+    px(ctx, '#1e1e2a', sx + T - 14, sy + 25 - liftR, 6, 4);
+    px(ctx, '#c4a030', sx + T - 14, sy + 29 - liftR, 6, 3);
     // Greatsword
     px(ctx, '#64748b', sx + T - 4, sy + 0, 4, 24);
     px(ctx, '#c4a030', sx + T - 7, sy + 18, 10, 3);
@@ -744,7 +772,7 @@ const Sprites = (() => {
   }
 
   // ── CRIMSON RIDER BOSS (5x size = ~160x160px) ──────────────
-  function drawCrimsonRider(ctx, x, y, frame, hp, maxHp, isCharging = false, isKicking = false, chargeDir = 'right', windupType = null, attackProgress = 0) {
+  function drawCrimsonRider(ctx, x, y, frame, hp, maxHp, isCharging = false, isKicking = false, chargeDir = 'right', windupType = null, attackProgress = 0, walkPhase = 0) {
     const f = frame % 8;
     const rage = hp / maxHp < 0.4;
     const cx = x + H;
@@ -808,28 +836,30 @@ const Sprites = (() => {
     const rearAngle = (windupType === 'charge' || windupType === 'kick') ? -0.18 : (isKicking ? 0.14 : 0);
     ctx.rotate(rearAngle);
 
-    const trot = Math.sin(f * 0.9) * (isCharging ? 10 : 4);
+    const trot = walkPhase !== 0 ? Math.sin(walkPhase) * (isCharging ? 11 : 6) : 0;
+    const liftA = walkPhase !== 0 ? Math.max(0, Math.sin(walkPhase)) * 5 : 0;
+    const liftB = walkPhase !== 0 ? Math.max(0, -Math.sin(walkPhase)) * 5 : 0;
 
     // ── WHITE HORSE (partially armored) ──
     // Tail
     ctx.fillStyle = '#d4d0cc';
     ctx.fillRect(-56, -4, 16, 26);
-    // Back legs (buck backward during kick)
+    // Back legs (buck backward during kick, 2-beat diagonal trot when moving)
     ctx.fillStyle = '#d4d0cc';
     const kickBackX = isKicking ? -20 : 0;
     const kickBackY = isKicking ? -14 : 0;
-    ctx.fillRect(-40 + trot + kickBackX, 18 + kickBackY, 12, 34);
-    ctx.fillRect(-24 - trot + kickBackX, 18 + kickBackY, 12, 34);
+    ctx.fillRect(-40 + trot + kickBackX, 18 + kickBackY - liftA, 12, 34);
+    ctx.fillRect(-24 - trot + kickBackX, 18 + kickBackY - liftB, 12, 34);
     // Front legs
     const frontLift = (windupType === 'charge') ? -14 : 0;
-    ctx.fillRect(16 - trot, 18 + frontLift, 12, 34);
-    ctx.fillRect(30 + trot, 18 + frontLift, 12, 34);
+    ctx.fillRect(16 - trot, 18 + frontLift - liftB, 12, 34);
+    ctx.fillRect(30 + trot, 18 + frontLift - liftA, 12, 34);
     // Hooves
     ctx.fillStyle = '#334155';
-    ctx.fillRect(-40 + trot + kickBackX, 46 + kickBackY, 12, 6);
-    ctx.fillRect(-24 - trot + kickBackX, 46 + kickBackY, 12, 6);
-    ctx.fillRect(16 - trot, 46 + frontLift, 12, 6);
-    ctx.fillRect(30 + trot, 46 + frontLift, 12, 6);
+    ctx.fillRect(-40 + trot + kickBackX, 46 + kickBackY - liftA, 12, 6);
+    ctx.fillRect(-24 - trot + kickBackX, 46 + kickBackY - liftB, 12, 6);
+    ctx.fillRect(16 - trot, 46 + frontLift - liftB, 12, 6);
+    ctx.fillRect(30 + trot, 46 + frontLift - liftA, 12, 6);
 
     // Horse body
     ctx.fillStyle = '#e8e0d8';

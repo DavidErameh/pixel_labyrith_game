@@ -1,0 +1,25 @@
+{
+  "name": "Pixel Labyrinth",
+  "short_name": "PixelLabyrinth",
+  "description": "Dark dungeon pixel-art fantasy crawler — The Sunken Vaults of Oakhaven",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

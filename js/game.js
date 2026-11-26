@@ -1102,14 +1102,14 @@ class Game {
       }
       switch (e.type) {
         case 'slime':          Sprites.drawSlime(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
-        case 'black_knight':   Sprites.drawBlackKnight(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
-        case 'dark_champion':  Sprites.drawDarkChampion(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy); break;
+        case 'black_knight':   Sprites.drawBlackKnight(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy, e.isMoving ? e.walkPhase : 0); break;
+        case 'dark_champion':  Sprites.drawDarkChampion(ctx, ex, ey, e.frame, e.hp, e.maxHp, edx, edy, e.isMoving ? e.walkPhase : 0); break;
         case 'spider':         Sprites.drawSpider(ctx, ex, ey, e.frame, e.hp, e.maxHp, e.stunTimer > 500, edx, edy); break;
         case 'ghost':          Sprites.drawGhost(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp); break;
         case 'boss': {
           const windup = e.chargeWindup > 0 ? 'charge' : (e.kickWindup > 0 ? 'kick' : null);
           const atkProg = e.attackAnimTimer > 0 ? 1 - (e.attackAnimTimer / 320) : 0;
-          Sprites.drawCrimsonRider(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp, e.isCharging, e.isKicking, e.chargeDir, windup, atkProg);
+          Sprites.drawCrimsonRider(ctx, ex + edx, ey + edy, e.frame, e.hp, e.maxHp, e.isCharging, e.isKicking, e.chargeDir, windup, atkProg, e.isMoving ? e.walkPhase : 0);
           break;
         }
       }
@@ -1138,9 +1138,9 @@ class Game {
       if (!p.invincible || this.globalFrame % 2 === 0) {
         const atkProg = p.attackTimer > 0 ? 1 - (p.attackTimer / 240) : 0;
         if (p.playerClass === 'wizard') {
-          Sprites.drawWizard(ctx, px2, py2, p.dir, p.frame, p.barrierActive, atkProg, pdx, pdy, p.rootedTimer > 0, p.mp, p.maxMp);
+          Sprites.drawWizard(ctx, px2, py2, p.dir, p.frame, p.barrierActive, atkProg, pdx, pdy, p.rootedTimer > 0, p.mp, p.maxMp, p.isMoving ? p.walkPhase : 0);
         } else {
-          Sprites.drawKnight(ctx, px2, py2, p.dir, p.frame, p.shieldActive, atkProg, pdx, pdy, p.rootedTimer > 0, p.flameSwordHits > 0);
+          Sprites.drawKnight(ctx, px2, py2, p.dir, p.frame, p.shieldActive, atkProg, pdx, pdy, p.rootedTimer > 0, p.flameSwordHits > 0, p.isMoving ? p.walkPhase : 0);
         }
       }
 
@@ -1276,7 +1276,11 @@ class Game {
   }
 
   _getEffectiveZoom() {
-    return window.innerWidth < 460 ? 1.65 : (C.CAMERA_ZOOM || 1);
+    const shortEdge = Math.min(window.innerWidth, window.innerHeight);
+    if (shortEdge < 500) {
+      return window.innerWidth < window.innerHeight ? 1.65 : 1.45;
+    }
+    return C.CAMERA_ZOOM || 1;
   }
 
   _updateCamera() {

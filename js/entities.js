@@ -8,6 +8,8 @@ class Player {
     this.r = r; this.c = c;
     this.visX = c * C.TILE;
     this.visY = r * C.TILE;
+    this.walkPhase = 0;
+    this.isMoving = false;
     this.playerClass = playerClass;
 
     // HP — class dependent
@@ -88,6 +90,15 @@ class Player {
     this.visY += (targetY - this.visY) * lerp;
     if (Math.abs(targetX - this.visX) < 0.3) this.visX = targetX;
     if (Math.abs(targetY - this.visY) < 0.3) this.visY = targetY;
+
+    const movingNow = Math.abs(targetX - this.visX) > 0.5 || Math.abs(targetY - this.visY) > 0.5;
+    if (movingNow) {
+      this.isMoving = true;
+      this.walkPhase += (dt / 1000) * 16;
+    } else {
+      this.isMoving = false;
+      this.walkPhase = 0;
+    }
 
     if (this.invincible) {
       this.invincibleTimer -= dt;
@@ -281,6 +292,8 @@ class Enemy {
     this.r = r; this.c = c;
     this.visX = c * C.TILE;
     this.visY = r * C.TILE;
+    this.walkPhase = 0;
+    this.isMoving = false;
     this.alive = true;
     this.frame = 0;
     this.animTimer = 0;
@@ -317,6 +330,15 @@ class Enemy {
     this.visY += (targetY - this.visY) * lerp;
     if (Math.abs(targetX - this.visX) < 0.3) this.visX = targetX;
     if (Math.abs(targetY - this.visY) < 0.3) this.visY = targetY;
+
+    const movingNow = Math.abs(targetX - this.visX) > 0.5 || Math.abs(targetY - this.visY) > 0.5;
+    if (movingNow) {
+      this.isMoving = true;
+      this.walkPhase = (this.walkPhase || 0) + (dt / 1000) * 14;
+    } else {
+      this.isMoving = false;
+      this.walkPhase = 0;
+    }
 
     if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);
@@ -506,6 +528,15 @@ class CrimsonRider extends Enemy {
     this.visY += (targetY - this.visY) * lerp;
     if (Math.abs(targetX - this.visX) < 0.3) this.visX = targetX;
     if (Math.abs(targetY - this.visY) < 0.3) this.visY = targetY;
+
+    const movingNow = this.isCharging || Math.abs(targetX - this.visX) > 0.5 || Math.abs(targetY - this.visY) > 0.5;
+    if (movingNow) {
+      this.isMoving = true;
+      this.walkPhase = (this.walkPhase || 0) + (dt / 1000) * (this.isCharging ? 20 : 12);
+    } else {
+      this.isMoving = false;
+      this.walkPhase = 0;
+    }
 
     if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     if (this.attackCooldown > 0) this.attackCooldown = Math.max(0, this.attackCooldown - dt);

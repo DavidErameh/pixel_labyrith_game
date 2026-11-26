@@ -4,9 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Pixel Labyrinth" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0a0a0f" />
   <title>Pixel Labyrinth</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -167,6 +172,7 @@
         <div id="hud-score">💎 <span id="score-val">0</span></div>
         <div id="hud-keys">🗝️ <span id="keys-val">0</span></div>
         <div class="hud-actions">
+          <button id="btn-fullscreen" title="Fullscreen">⛶</button>
           <button id="btn-map" title="Expand Map (M)">🗺️</button>
           <button id="btn-mute" title="Mute/Unmute Sound">🔊</button>
           <button id="btn-pause" title="Pause (Esc)">⏸</button>
