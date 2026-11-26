@@ -7,7 +7,6 @@
 
   let game = null;
   let selectedClass = 'knight'; // set by class select screen
-  let startFloorTarget = 1;     // 1 = normal run, C.FLOORS = direct Boss Floor
 
   // ── Screen Manager ──────────────────────────────────────────
   function showScreen(id) {
@@ -57,7 +56,6 @@
   });
 
   document.getElementById('btn-newgame').addEventListener('click', () => {
-    startFloorTarget = 1;
     showScreen('screen-worldmap');
   });
 
@@ -65,11 +63,6 @@
   if (backWmBtn) {
     backWmBtn.addEventListener('click', () => showScreen('screen-title'));
   }
-
-  document.getElementById('btn-boss-floor').addEventListener('click', () => {
-    startFloorTarget = C.FLOORS;
-    showScreen('screen-classselect');
-  });
 
   document.getElementById('btn-howtoplay').addEventListener('click', () => {
     showScreen('screen-howtoplay');
@@ -187,11 +180,7 @@
       game.loadSaveData(saveData);
       UI.showToast(`🔮 Resumed Floor ${saveData.floor}!`);
     } else {
-      game.startFloor(startFloorTarget);
-      if (startFloorTarget === C.FLOORS) {
-        UI.showToast('👑 Entered Floor 6 — The Dark Knight awaits!');
-      }
-      startFloorTarget = 1;
+      game.startFloor(1);
     }
 
     showScreen('screen-game');

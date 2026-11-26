@@ -722,7 +722,7 @@ const EntityFactory = {
   spawnEnemies(grid, rows, cols, floor, playerStart, bossFloor) {
     const positions = MazeGen.getFloorPositions(grid, rows, cols, playerStart);
     const blocksPerEnemy = C.SPAWN_BLOCKS_MIN + Math.floor(Math.random() * (C.SPAWN_BLOCKS_MAX - C.SPAWN_BLOCKS_MIN + 1));
-    const count = Math.max(8, Math.floor(positions.length / blocksPerEnemy) + (floor - 1) * 2);
+    const count = Math.max(11, Math.floor(positions.length / blocksPerEnemy) + (floor - 1) * 2 + 3);
     const enemies = [];
 
     if (bossFloor) {
