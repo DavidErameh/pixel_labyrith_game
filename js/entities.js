@@ -788,8 +788,41 @@ const EntityFactory = {
     if (floor !== 4) return [];
     const positions = MazeGen.getFloorPositions(grid, rows, cols, playerStart)
       .filter(p => Math.abs(p.r - playerStart.r) + Math.abs(p.c - playerStart.c) > 4);
-    const shuffled = shuffle([...positions]).slice(0, 12);
-    return shuffled.map((pos, idx) => ({
+
+    // Score tiles for strategic corner/chokepoint placement (blind L-turns & junctions)
+    const isOpen = (r, c) => r >= 0 && r < rows && c >= 0 && c < cols && grid[r][c] !== C.T_WALL;
+    const scored = positions.map(p => {
+      const up = isOpen(p.r - 1, p.c), down = isOpen(p.r + 1, p.c);
+      const left = isOpen(p.r, p.c - 1), right = isOpen(p.r, p.c + 1);
+      const openCount = (up ? 1 : 0) + (down ? 1 : 0) + (left ? 1 : 0) + (right ? 1 : 0);
+      const isTurn = (up || down) && (left || right);
+      let score = 0;
+      if (isTurn && openCount === 2) score += 5;       // tight blind L-corner
+      else if (isTurn && openCount === 3) score += 3;  // T-junction corner
+      else if (openCount === 2) score += 1;            // narrow corridor
+      // Bonus if near a chest, door, or shrine
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          const t = grid[p.r + dr] && grid[p.r + dr][p.c + dc];
+          if (t === C.T_CHEST || t === C.T_DOOR || t === C.T_SAVEPOINT) score += 2;
+        }
+      }
+      return { r: p.r, c: p.c, score };
+    }).filter(p => p.score >= 3);
+
+    shuffle(scored);
+    scored.sort((a, b) => b.score - a.score);
+
+    // Pick up to 14 strategic corners spaced at least 3 tiles apart
+    const chosen = [];
+    for (const cand of scored) {
+      if (chosen.length >= 14) break;
+      if (chosen.every(t => Math.abs(t.r - cand.r) + Math.abs(t.c - cand.c) >= 3)) {
+        chosen.push(cand);
+      }
+    }
+
+    return chosen.map((pos, idx) => ({
       r: pos.r,
       c: pos.c,
       kind: idx % 2 === 0 ? 'bomb' : 'arrow',

@@ -403,7 +403,31 @@ class Game {
     if (!this.traps || this.traps.length === 0) return;
     const TT = C.TILE;
     for (const trap of this.traps) {
-      if (trap.cooldown > 0) trap.cooldown = Math.max(0, trap.cooldown - dt);
+      if (trap.cooldown > 0) {
+        trap.cooldown = Math.max(0, trap.cooldown - dt);
+        continue;
+      }
+
+      // Check direct impact or close proximity from player or any alive enemy
+      const pDist = Math.abs(trap.r - p.r) + Math.abs(trap.c - p.c);
+      let minEnemyDist = 999;
+      for (const e of this.enemies) {
+        if (!e.alive) continue;
+        const ed = Math.abs(trap.r - e.r) + Math.abs(trap.c - e.c);
+        if (ed < minEnemyDist) minEnemyDist = ed;
+      }
+      const closest = Math.min(pDist, minEnemyDist);
+
+      if (closest === 0) {
+        // Direct impact: detonate immediately!
+        trap.armed = true;
+        trap.fuse = 0;
+      } else if (!trap.armed && closest <= 1) {
+        // Close enough: quick arming fuse
+        trap.armed = true;
+        trap.fuse = 260;
+      }
+
       if (!trap.armed) continue;
       trap.fuse -= dt;
       if (trap.fuse <= 0) {
@@ -411,9 +435,9 @@ class Game {
         trap.cooldown = 3500;
         Sound.trapBoom();
         p.spawnParticles(trap.c * TT + TT / 2, trap.r * TT + TT / 2, trap.kind === 'bomb' ? '#ef4444' : '#cbd5e1', 12, 3);
-        const d = Math.abs(trap.r - p.r) + Math.abs(trap.c - p.c);
-        if (d <= 1) {
-          // Non-lethal trap: takes HP but cannot kill you (leaves >= 1 HP)
+
+        // Non-lethal trap damage to player (takes HP but cannot kill you)
+        if (pDist <= 1) {
           const rawDmg = trap.kind === 'bomb' ? 3 : 2;
           const actualDmg = Math.min(rawDmg, Math.max(0, p.hp - 1));
           if (actualDmg > 0) {
@@ -423,6 +447,14 @@ class Game {
             this.onHpUpdate && this.onHpUpdate(p.hp, p.maxHp);
           } else {
             p.addEffect('hurt', p.r, p.c, 'TRAP!', '#f97316');
+          }
+        }
+
+        // Also damage nearby enemies caught in the blast
+        for (const e of this.enemies) {
+          if (!e.alive) continue;
+          if (Math.abs(trap.r - e.r) + Math.abs(trap.c - e.c) <= 1) {
+            e.takeDamage(2);
           }
         }
       }
