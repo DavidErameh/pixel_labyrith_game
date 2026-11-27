@@ -61,12 +61,11 @@ const Sprites = (() => {
     px(ctx, c1, x + H - 2, y + 2, 4, 5);
     px(ctx, c2, x + H - 1, y + 1, 2, 3);
     px(ctx, '#fff9c4', x + H, y + 1, 1, 2);
-    // Glow circle (soft)
-    const grd = ctx.createRadialGradient(x + H, y + H, 2, x + H, y + H, T);
-    grd.addColorStop(0, 'rgba(255,140,0,0.22)');
-    grd.addColorStop(1, 'rgba(255,140,0,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(x - T/2, y - T/2, T * 2, T * 2);
+    // Fast layered glow circles (no per-frame gradient allocation)
+    ctx.fillStyle = 'rgba(255,140,0,0.10)';
+    ctx.beginPath(); ctx.arc(x + H, y + H, T * 0.85, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,160,40,0.16)';
+    ctx.beginPath(); ctx.arc(x + H, y + H, T * 0.45, 0, Math.PI * 2); ctx.fill();
   }
 
   function drawDoor(ctx, x, y, locked) {
@@ -101,12 +100,9 @@ const Sprites = (() => {
   function drawSavePoint(ctx, x, y, frame) {
     drawFloor(ctx, x, y);
     const pulse = 0.6 + 0.4 * Math.sin(frame * 0.45);
-    // Arcane aura
-    const grd = ctx.createRadialGradient(x + H, y + H, 2, x + H, y + H, T * 0.8);
-    grd.addColorStop(0, `rgba(155, 93, 229, ${0.45 * pulse})`);
-    grd.addColorStop(1, 'rgba(155, 93, 229, 0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(x - 6, y - 6, T + 12, T + 12);
+    // Fast arcane aura
+    ctx.fillStyle = `rgba(155, 93, 229, ${0.22 * pulse})`;
+    ctx.beginPath(); ctx.arc(x + H, y + H, T * 0.65, 0, Math.PI * 2); ctx.fill();
 
     // Stone pedestal
     px(ctx, '#3a3a52', x + 7, y + 20, T - 14, 8);
@@ -323,48 +319,45 @@ const Sprites = (() => {
       ctx.stroke();
     }
 
-    // Boots peeking & stepping smoothly under robe hem
+    // Boots peeking & stepping smoothly under dark grey robe hem
     const wizSide = (dir === 'left' || dir === 'right') ? Math.round(stride * 2.2) : 0;
     const wizLiftL = Math.max(0, stride) * 2.5;
     const wizLiftR = Math.max(0, -stride) * 2.5;
-    px(ctx, '#1e1b4b', px0 + 9 + wizSide, py + T - 4 - wizLiftL, 5, 4);
-    px(ctx, '#4c1d95', px0 + 9 + wizSide, py + T - 4 - wizLiftL, 5, 2);
-    px(ctx, '#1e1b4b', px0 + T - 14 - wizSide, py + T - 4 - wizLiftR, 5, 4);
-    px(ctx, '#4c1d95', px0 + T - 14 - wizSide, py + T - 4 - wizLiftR, 5, 2);
+    px(ctx, '#111827', px0 + 9 + wizSide, py + T - 4 - wizLiftL, 5, 4);
+    px(ctx, '#374151', px0 + 9 + wizSide, py + T - 4 - wizLiftL, 5, 2);
+    px(ctx, '#111827', px0 + T - 14 - wizSide, py + T - 4 - wizLiftR, 5, 4);
+    px(ctx, '#374151', px0 + T - 14 - wizSide, py + T - 4 - wizLiftR, 5, 2);
 
-    // Robe — dark navy/purple, full length with layered inner lining
-    px(ctx, '#2d1b55', px0 + 7, py + 13, T - 14, T - 15);
-    px(ctx, '#1e113a', px0 + 11, py + 14, T - 22, T - 16); // inner lining
-    px(ctx, '#3d2570', px0 + 8, py + 13, 4, T - 17);
-    px(ctx, '#3d2570', px0 + T - 12, py + 13, 4, T - 17);
-    // Robe hem decoration + star sparkles
-    ctx.fillStyle = '#6d28d9';
-    ctx.fillRect(px0 + 7, py + T - 6, T - 14, 2);
-    px(ctx, f % 2 === 0 ? '#ffd700' : '#c084fc', px0 + 9, py + T - 6, 2, 1);
-    px(ctx, f % 2 === 0 ? '#c084fc' : '#ffd700', px0 + T - 12, py + T - 6, 2, 1);
-    // Belt / waist clasp
-    px(ctx, '#ffd700', px0 + H - 4, py + 22, 8, 2);
+    // Dark Grey Cloak & Layered Flowing Robe (realistic silhouette & shading)
+    px(ctx, '#1f2937', px0 + 6, py + 12, T - 12, T - 14);      // outer dark grey robe
+    px(ctx, '#111827', px0 + 11, py + 14, T - 22, T - 16);     // deep inner shadow
+    px(ctx, '#374151', px0 + 7, py + 13, 5, T - 16);           // left robe fold highlight
+    px(ctx, '#374151', px0 + T - 12, py + 13, 5, T - 16);      // right robe fold highlight
+    // Shoulder mantle / draped sleeves
+    px(ctx, '#4b5563', px0 + 5, py + 12, T - 10, 4);
+    px(ctx, '#374151', px0 + 4, py + 15, 4, 7);
+    px(ctx, '#374151', px0 + T - 8, py + 15, 4, 7);
+    // Slate-silver hem & arcane trim
+    px(ctx, '#64748b', px0 + 6, py + T - 5, T - 12, 2);
+    px(ctx, '#94a3b8', px0 + H - 4, py + 21, 8, 2);            // belt
+    px(ctx, '#e2e8f0', px0 + H - 1, py + 21, 2, 2);            // silver clasp
 
-    // Face / head — small beard
-    px(ctx, '#c8a87e', px0 + 10, py + 7, T - 20, 9);
-    if (dir !== 'up') {
-      px(ctx, '#1a1a2e', px0 + 12, py + 9, 2, 2);
-      px(ctx, '#1a1a2e', px0 + T - 14, py + 9, 2, 2);
-    }
-    px(ctx, '#e0e0e0', px0 + 10, py + 14, T - 20, 3);
-
-    // Pointed wizard hat — slight droop to the right
-    px(ctx, '#3d1f6e', px0 + 6, py + 6, T - 12, 3);
-    ctx.fillStyle = '#3d1f6e';
+    // Deep Dark Grey Hood & Shadowed Face
+    ctx.fillStyle = '#1f2937';
     ctx.beginPath();
-    ctx.moveTo(px0 + H + 2, py - 5); // drooping tip
-    ctx.lineTo(px0 + T - 8, py + 7);
-    ctx.lineTo(px0 + 8, py + 7);
+    ctx.moveTo(px0 + H, py - 3);       // draped hood apex
+    ctx.lineTo(px0 + T - 6, py + 12);  // right hood shoulder
+    ctx.lineTo(px0 + 6, py + 12);      // left hood shoulder
     ctx.closePath();
     ctx.fill();
-    px(ctx, '#ffd700', px0 + H, py, 2, 2);
-    px(ctx, '#ffd700', px0 + H + 3, py + 3, 1, 1);
-    px(ctx, '#c084fc', px0 + H - 3, py + 3, 1, 1);
+    px(ctx, '#374151', px0 + 9, py + 2, T - 18, 4);            // hood crown fold
+    px(ctx, '#4b5563', px0 + 7, py + 10, T - 14, 3);           // hood rim
+    // Shadowed face cavity + glowing arcane eyes
+    px(ctx, '#090d16', px0 + 10, py + 5, T - 20, 7);
+    if (dir !== 'up') {
+      px(ctx, '#f59e0b', px0 + 12, py + 8, 2, 2);
+      px(ctx, '#f59e0b', px0 + T - 14, py + 8, 2, 2);
+    }
 
     if (isRooted) {
       ctx.strokeStyle = '#ffffff';
@@ -473,31 +466,38 @@ const Sprites = (() => {
   function drawWizardPreview(ctx, x, y, frame) {
     const f = frame % 4;
     const bob = f < 2 ? 0 : -1;
-    px(ctx, '#2d1b55', x + 9, y + 15 + bob, 14, 17);
-    px(ctx, '#3d2570', x + 10, y + 15 + bob, 4, 15);
-    px(ctx, '#c8a87e', x + 11, y + 9 + bob, 10, 8);
-    px(ctx, '#e0e0e0', x + 11, y + 15 + bob, 10, 2);
-    ctx.fillStyle = '#3d1f6e';
+    // Dark grey layered hooded robe
+    px(ctx, '#1f2937', x + 7, y + 13 + bob, 18, 18);
+    px(ctx, '#111827', x + 12, y + 15 + bob, 8, 15);
+    px(ctx, '#374151', x + 8, y + 14 + bob, 4, 15);
+    px(ctx, '#374151', x + 20, y + 14 + bob, 4, 15);
+    px(ctx, '#4b5563', x + 6, y + 13 + bob, 20, 4);
+    px(ctx, '#94a3b8', x + 12, y + 22 + bob, 8, 2);
+    // Deep dark grey hood + shadowed face + glowing amber eyes
+    ctx.fillStyle = '#1f2937';
     ctx.beginPath();
-    ctx.moveTo(x + H + 2, y - 2 + bob);
-    ctx.lineTo(x + 22, y + 9 + bob);
-    ctx.lineTo(x + 10, y + 9 + bob);
+    ctx.moveTo(x + H, y - 1 + bob);
+    ctx.lineTo(x + 25, y + 13 + bob);
+    ctx.lineTo(x + 7, y + 13 + bob);
     ctx.closePath();
     ctx.fill();
-    px(ctx, '#3d1f6e', x + 8, y + 7 + bob, 16, 3);
-    px(ctx, '#ffd700', x + H - 1, y + 2 + bob, 2, 2);
-    px(ctx, '#5c3d1e', x + 24, y + 7 + bob, 3, 20);
+    px(ctx, '#374151', x + 10, y + 3 + bob, 12, 4);
+    px(ctx, '#090d16', x + 11, y + 7 + bob, 10, 6);
+    px(ctx, '#f59e0b', x + 12, y + 9 + bob, 2, 2);
+    px(ctx, '#f59e0b', x + 18, y + 9 + bob, 2, 2);
+    // Staff + flame orb
+    px(ctx, '#5c3d1e', x + 25, y + 6 + bob, 3, 21);
     ctx.fillStyle = 'rgba(255,100,0,0.4)';
     ctx.beginPath();
-    ctx.arc(x + 25, y + 6 + bob, 7, 0, Math.PI * 2);
+    ctx.arc(x + 26, y + 5 + bob, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ff6600';
     ctx.beginPath();
-    ctx.arc(x + 25, y + 6 + bob, 4, 0, Math.PI * 2);
+    ctx.arc(x + 26, y + 5 + bob, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#fef08a';
     ctx.beginPath();
-    ctx.arc(x + 25, y + 6 + bob, 2, 0, Math.PI * 2);
+    ctx.arc(x + 26, y + 5 + bob, 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = 'rgba(255,100,0,0.5)';
     ctx.beginPath();
@@ -690,40 +690,59 @@ const Sprites = (() => {
     const liftR = Math.max(0, -stride) * 2.5;
     const sx = x + dashX, sy = y + bobY + dashY;
 
-    // Boots stepping under robe
-    px(ctx, '#1e1b4b', sx + 9, sy + T - 4 - liftL, 5, 4);
-    px(ctx, '#1e1b4b', sx + T - 14, sy + T - 4 - liftR, 5, 4);
+    // Boots stepping under full purple robe
+    px(ctx, '#1e0536', sx + 9, sy + T - 4 - liftL, 5, 4);
+    px(ctx, '#1e0536', sx + T - 14, sy + T - 4 - liftR, 5, 4);
 
-    // Indigo/purple caster robe
-    px(ctx, '#312e81', sx + 8, sy + 13, T - 16, T - 16);
-    px(ctx, '#4338ca', sx + 10, sy + 14, T - 20, T - 18);
-    px(ctx, '#38bdf8', sx + 8, sy + T - 6, T - 16, 2); // lightning hem
+    // Full Purple Robe & Layered Flowing Cloak
+    px(ctx, '#3b0764', sx + 6, sy + 12, T - 12, T - 14);
+    px(ctx, '#1e0536', sx + 11, sy + 14, T - 22, T - 16);
+    px(ctx, '#581c87', sx + 7, sy + 13, 5, T - 16);
+    px(ctx, '#581c87', sx + T - 12, sy + 13, 5, T - 16);
+    px(ctx, '#7e22ce', sx + 5, sy + 12, T - 10, 4);         // purple mantle
+    px(ctx, '#a855f7', sx + 6, sy + T - 5, T - 12, 2);      // arcane hem
+    px(ctx, '#38bdf8', sx + H - 2, sy + 21, 4, 2);          // lightning sash clasp
 
-    // Hooded head + glowing cyan eyes
-    px(ctx, '#1e1b4b', sx + 9, sy + 4, T - 18, 10);
-    px(ctx, '#0f172a', sx + 11, sy + 7, T - 22, 5);
-    px(ctx, '#38bdf8', sx + 12, sy + 9, 2, 2);
-    px(ctx, '#38bdf8', sx + T - 14, sy + 9, 2, 2);
-    // Pointed hood tip
-    ctx.fillStyle = '#312e81';
+    // Full Purple Hood & Shadowed Face with Electric Eyes
+    ctx.fillStyle = '#3b0764';
     ctx.beginPath();
-    ctx.moveTo(sx + H, sy - 4);
-    ctx.lineTo(sx + T - 8, sy + 6);
-    ctx.lineTo(sx + 8, sy + 6);
+    ctx.moveTo(sx + H, sy - 3);
+    ctx.lineTo(sx + T - 6, sy + 12);
+    ctx.lineTo(sx + 6, sy + 12);
     ctx.closePath();
     ctx.fill();
+    px(ctx, '#581c87', sx + 9, sy + 2, T - 18, 4);
+    px(ctx, '#7e22ce', sx + 7, sy + 10, T - 14, 3);
+    px(ctx, '#0f051d', sx + 10, sy + 5, T - 20, 7);
+    px(ctx, '#38bdf8', sx + 12, sy + 8, 2, 2);
+    px(ctx, '#38bdf8', sx + T - 14, sy + 8, 2, 2);
 
-    // Lightning staff + crackling cyan orb
-    px(ctx, '#475569', sx + T - 6, sy + 6, 2, 21);
-    const orbR = 3.5 + 0.8 * Math.sin((frame || 0) * 0.9);
+    // Ornate Staff + Crackling Lightning Crystal
+    px(ctx, '#334155', sx + T - 6, sy + 5, 3, 22);
+    px(ctx, '#94a3b8', sx + T - 7, sy + 8, 5, 2);
+    const orbR = 4 + 0.8 * Math.sin((frame || 0) * 0.9);
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+    ctx.beginPath();
+    ctx.arc(sx + T - 5, sy + 4, orbR + 3, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
-    ctx.arc(sx + T - 5, sy + 5, orbR, 0, Math.PI * 2);
+    ctx.arc(sx + T - 5, sy + 4, orbR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#e0f2fe';
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(sx + T - 5, sy + 5, 1.5, 0, Math.PI * 2);
+    ctx.arc(sx + T - 5, sy + 4, 1.8, 0, Math.PI * 2);
     ctx.fill();
+    // Crackling mini lightning arc around staff orb
+    if ((frame || 0) % 2 === 0) {
+      ctx.strokeStyle = '#e0f2fe';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(sx + T - 9, sy + 2);
+      ctx.lineTo(sx + T - 5, sy + 0);
+      ctx.lineTo(sx + T - 1, sy + 4);
+      ctx.stroke();
+    }
 
     drawEnemyHpBar(ctx, sx, sy, hp, maxHp);
   }
@@ -798,6 +817,44 @@ const Sprites = (() => {
       ctx.fill();
       ctx.fillStyle = '#bbf7d0';
       ctx.fillRect(x - 2, y - 2, 2, 2);
+    } else if (type === 'lightning') {
+      // Real jagged multi-segment lightning bolt with electric halo & fork
+      const jit1 = ((frame % 2 === 0) ? 1 : -1) * 4;
+      const jit2 = ((frame % 3 === 0) ? -1 : 1) * 3;
+      ctx.save();
+      // Outer electric glow
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x - 9, y + jit1 * 0.5);
+      ctx.lineTo(x - 3, y - jit1);
+      ctx.lineTo(x + 3, y + jit2);
+      ctx.lineTo(x + 9, y - jit2 * 0.5);
+      ctx.stroke();
+
+      // Bright white electric core
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Branching mini-arc
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x - 2, y - jit1);
+      ctx.lineTo(x + 2, y - jit1 - 5);
+      ctx.moveTo(x + 2, y + jit2);
+      ctx.lineTo(x + 6, y + jit2 + 5);
+      ctx.stroke();
+
+      // Glowing core spark
+      ctx.fillStyle = '#e0f2fe';
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     } else if (type === 'fireball') {
       // Orange/red fireball with glow
       const glow = ctx.createRadialGradient(x, y, 1, x, y, 10 + pulse);

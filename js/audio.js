@@ -95,11 +95,20 @@ const Sound = (() => {
     _tone(2520, 1320, 0.16, 'sine', 0.04, 150);
   }
 
-  // ── SFX: Enemy Wizard lightning bolt ──────────────────────
+  // ── SFX: Enemy Wizard lightning bolt (electric crackle + thunder snap) ──
   function lightning() {
-    _noise(0.11, 0.22, 1600, 0);
-    _tone(920, 260, 0.14, 'sawtooth', 0.12);
-    _tone(1800, 480, 0.09, 'square', 0.06, 20);
+    _noise(0.14, 0.25, 1900, 0);
+    _tone(1280, 340, 0.12, 'sawtooth', 0.13);
+    _tone(2200, 620, 0.08, 'square', 0.07, 15);
+    _noise(0.18, 0.16, 0, 320, 40); // low thunder crackle tail
+    _tone(110, 48, 0.20, 'triangle', 0.12, 35);
+  }
+
+  // ── SFX: Lightning impact / close zap ────────────────────
+  function lightningHit() {
+    _noise(0.10, 0.26, 2200, 0);
+    _tone(1600, 220, 0.11, 'sawtooth', 0.14);
+    _tone(95, 42, 0.16, 'triangle', 0.14, 20);
   }
 
   // ── SFX: Trap bomb / arrow trigger ────────────────────────
@@ -219,7 +228,7 @@ const Sound = (() => {
   document.addEventListener('pointerdown', _unlockAudio, { once: true, passive: true });
 
   return {
-    swing, hit, hitFlesh, hitArmor, lightning, trapBoom,
+    swing, hit, hitFlesh, hitArmor, lightning, lightningHit, trapBoom,
     kill, hurt, pickup, key, unlock, clash, save,
     block, parry, web, squish, enemySlash, potion, fireball,
     toggleMute, isMuted

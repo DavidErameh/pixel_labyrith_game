@@ -97,6 +97,10 @@ class Game {
     this.traps = EntityFactory.spawnTraps(this.grid, this.rows, this.cols, floor, startPos);
     this.projectiles = [];
 
+    this._buildBgCache();
+    this._lastVisR = -1;
+    this._lastVisC = -1;
+    this._minimapTimer = 0;
     this._handleResize();
     this._updateCamera();
     this._updateHUD();
@@ -181,6 +185,10 @@ class Game {
     this.visible = vis.visible;
     vis.explored.forEach(k => this.explored.add(k));
 
+    this._buildBgCache();
+    this._lastVisR = -1;
+    this._lastVisC = -1;
+    this._minimapTimer = 0;
     this._handleResize();
     this._updateCamera();
     this._updateHUD();
@@ -265,6 +273,7 @@ class Game {
     const onHitPlayer = (enemy, dmg, isCharge = false, isKick = false) => {
       if (p.invincible) return;
       if (enemy.type === 'slime' || enemy.type === 'spider') Sound.squish();
+      else if (enemy.type === 'enemy_wizard') Sound.lightningHit();
       else Sound.enemySlash();
 
       // Horse kick knockback helper
@@ -379,10 +388,16 @@ class Game {
       return;
     }
 
-    const vis = MazeGen.computeVisibility(this.grid, this.rows, this.cols, p.r, p.c, C.VISION_RADIUS);
-    this.visible = vis.visible;
-    vis.explored.forEach(k => this.explored.add(k));
+    if (this._lastVisR !== p.r || this._lastVisC !== p.c) {
+      this._lastVisR = p.r;
+      this._lastVisC = p.c;
+      const vis = MazeGen.computeVisibility(this.grid, this.rows, this.cols, p.r, p.c, C.VISION_RADIUS);
+      this.visible = vis.visible;
+      vis.explored.forEach(k => this.explored.add(k));
+      this._minimapDirty = true;
+    }
 
+    this._minimapTimer = (this._minimapTimer || 0) + dt;
     this._updateCamera();
     if (this.onHpUpdate) this.onHpUpdate(p.hp, p.maxHp);
   }
@@ -487,7 +502,7 @@ class Game {
             Sound.block();
             p.addEffect('shield', p.r, p.c, res === 'broken' ? 'BROKE!' : 'BLOCKED', '#60a5fa');
           } else if (p.takeDamage(proj.dmg)) {
-            Sound.hurt();
+            Sound.lightningHit();
             this.triggerShake(4, 120);
             p.addEffect('hurt', p.r, p.c, `-${proj.dmg}`, '#38bdf8');
           }
@@ -1156,6 +1171,23 @@ class Game {
     }
   }
 
+  _buildBgCache() {
+    const TT = C.TILE;
+    const w = this.cols * TT;
+    const h = this.rows * TT;
+    if (!this._bgCanvas) this._bgCanvas = document.createElement('canvas');
+    this._bgCanvas.width = w;
+    this._bgCanvas.height = h;
+    const bctx = this._bgCanvas.getContext('2d');
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const wx = c * TT, wy = r * TT;
+        if (this.grid[r][c] === C.T_WALL) Sprites.drawWall(bctx, wx, wy);
+        else Sprites.drawFloor(bctx, wx, wy);
+      }
+    }
+  }
+
   // ── Rendering ───────────────────────────────────────────────
   _render() {
     const ctx = this.ctx;
@@ -1176,11 +1208,27 @@ class Game {
     }
     ctx.translate(-this.camX + shakeX, -this.camY + shakeY);
 
-    // ── Draw Tiles ──
-    // Full dungeon always visible — no hidden fog in main view.
-    // Minimap keeps its own discovery fog separately.
-    for (let r = 0; r < this.rows; r++) {
-      for (let c = 0; c < this.cols; c++) {
+    // Camera viewport culling bounds
+    const viewW = this.canvas.width / zoom;
+    const viewH = this.canvas.height / zoom;
+    const minC = Math.max(0, Math.floor(this.camX / TT) - 1);
+    const maxC = Math.min(this.cols - 1, Math.ceil((this.camX + viewW) / TT) + 1);
+    const minR = Math.max(0, Math.floor(this.camY / TT) - 1);
+    const maxR = Math.min(this.rows - 1, Math.ceil((this.camY + viewH) / TT) + 1);
+
+    // ── Blit Static Walls & Floors from Offscreen Cache ──
+    if (this._bgCanvas) {
+      const sx = minC * TT, sy = minR * TT;
+      const sw = Math.min(this._bgCanvas.width - sx, (maxC - minC + 1) * TT);
+      const sh = Math.min(this._bgCanvas.height - sy, (maxR - minR + 1) * TT);
+      if (sw > 0 && sh > 0) {
+        ctx.drawImage(this._bgCanvas, sx, sy, sw, sh, sx, sy, sw, sh);
+      }
+    }
+
+    // ── Draw Dynamic Tiles & Soft Darkness (Culled to Viewport) ──
+    for (let r = minR; r <= maxR; r++) {
+      for (let c = minC; c <= maxC; c++) {
         const wx = c * TT, wy = r * TT;
         const k = r * 1000 + c;
         const isVis = this.visible.has(k);
@@ -1188,51 +1236,44 @@ class Game {
 
         const tile = this.grid[r][c];
         switch (tile) {
-          case C.T_WALL:       Sprites.drawWall(ctx, wx, wy); break;
-          case C.T_FLOOR:      Sprites.drawFloor(ctx, wx, wy); break;
           case C.T_TORCH:      Sprites.drawTorch(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
           case C.T_DOOR:       this.floor === 5 ? Sprites.drawBigGate(ctx, wx, wy, true) : Sprites.drawDoor(ctx, wx, wy, true); break;
           case C.T_OPEN:       this.floor === 5 ? Sprites.drawBigGate(ctx, wx, wy, false) : Sprites.drawDoor(ctx, wx, wy, false); break;
           case C.T_CHEST:      Sprites.drawChest(ctx, wx, wy, false); break;
           case C.T_CHEST_OPEN: Sprites.drawChest(ctx, wx, wy, true); break;
           case C.T_SAVEPOINT:  Sprites.drawSavePoint(ctx, wx, wy, isVis ? this.globalFrame : 0); break;
-          default: Sprites.drawFloor(ctx, wx, wy);
         }
 
-        // Soft darkness on areas not currently in line-of-sight
-        // (not fully black — dungeon structure always readable)
         if (!isVis) {
-          ctx.fillStyle = isExp
-            ? 'rgba(0,0,0,0.42)'   // explored but not in current vision: subtle dim
-            : 'rgba(0,0,0,0.70)';  // never visited: darker, but dungeon still visible
+          ctx.fillStyle = isExp ? 'rgba(0,0,0,0.42)' : 'rgba(0,0,0,0.70)';
           ctx.fillRect(wx, wy, TT, TT);
         }
       }
     }
 
-    // ── Draw Floor 4 Traps ──
+    // ── Draw Floor 4 Traps (Culled) ──
     if (this.traps && this.traps.length > 0) {
-      this.traps.forEach(trap => {
-        const k = trap.r * 1000 + trap.c;
-        if (!this.explored.has(k)) return;
+      for (const trap of this.traps) {
+        if (trap.r < minR || trap.r > maxR || trap.c < minC || trap.c > maxC) continue;
+        if (!this.explored.has(trap.r * 1000 + trap.c)) continue;
         Sprites.drawTrap(ctx, trap.c * TT, trap.r * TT, trap, this.globalFrame);
-      });
+      }
     }
 
-    // ── Draw Items ──
-    this.items.forEach(item => {
-      if (item.collected) return;
-      const k = item.r * 1000 + item.c;
-      // Show items in explored areas so player can spot drops from afar
-      if (!this.explored.has(k)) return;
+    // ── Draw Items (Culled) ──
+    for (const item of this.items) {
+      if (item.collected) continue;
+      if (item.r < minR || item.r > maxR || item.c < minC || item.c > maxC) continue;
+      if (!this.explored.has(item.r * 1000 + item.c)) continue;
       Sprites.drawItem(ctx, item.c * TT, item.r * TT, item.type, item.frame);
-    });
+    }
 
-    // ── Draw Enemies ──
-    this.enemies.forEach(e => {
-      if (!e.alive) return;
+    // ── Draw Enemies (Culled) ──
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      if (e.type !== 'boss' && (e.r < minR - 1 || e.r > maxR + 1 || e.c < minC - 1 || e.c > maxC + 1)) continue;
       const k = e.r * 1000 + e.c;
-      if (!this.visible.has(k) && e.type !== 'boss') return;
+      if (!this.visible.has(k) && e.type !== 'boss') continue;
       const ex = e.visX != null ? e.visX : e.c * TT;
       const ey = e.visY != null ? e.visY : e.r * TT;
       let edx = 0, edy = 0;
@@ -1261,7 +1302,7 @@ class Game {
         ctx.fillStyle = `rgba(255,255,255,${Math.min(0.75, e.hitFlashTimer / 150)})`;
         ctx.fillRect(ex + edx + 2, ey + edy + 2, TT - 4, TT - 4);
       }
-    });
+    }
 
     // ── Draw Projectiles ──
     this.projectiles.forEach(proj => {
@@ -1316,7 +1357,11 @@ class Game {
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    this._renderMinimap();
+    if (this._minimapDirty || this._minimapTimer >= 160) {
+      this._minimapDirty = false;
+      this._minimapTimer = 0;
+      this._renderMinimap();
+    }
   }
 
   _renderMinimap() {
