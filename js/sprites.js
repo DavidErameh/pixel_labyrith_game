@@ -342,21 +342,21 @@ const Sprites = (() => {
     px(ctx, '#94a3b8', px0 + H - 4, py + 21, 8, 2);            // belt
     px(ctx, '#e2e8f0', px0 + H - 1, py + 21, 2, 2);            // silver clasp
 
-    // Deep Dark Grey Hood & Shadowed Face
-    ctx.fillStyle = '#1f2937';
-    ctx.beginPath();
-    ctx.moveTo(px0 + H, py - 3);       // draped hood apex
-    ctx.lineTo(px0 + T - 6, py + 12);  // right hood shoulder
-    ctx.lineTo(px0 + 6, py + 12);      // left hood shoulder
-    ctx.closePath();
-    ctx.fill();
-    px(ctx, '#374151', px0 + 9, py + 2, T - 18, 4);            // hood crown fold
-    px(ctx, '#4b5563', px0 + 7, py + 10, T - 14, 3);           // hood rim
-    // Shadowed face cavity + glowing arcane eyes
-    px(ctx, '#090d16', px0 + 10, py + 5, T - 20, 7);
+    // Dark Grey Rounded Hood pulled over head + Skin-color face + Dark eyes
+    px(ctx, '#1f2937', px0 + 9, py + 1, T - 18, 3);            // rounded hood top
+    px(ctx, '#1f2937', px0 + 7, py + 3, T - 14, 10);           // main hood cowl
+    px(ctx, '#374151', px0 + 10, py + 2, T - 20, 3);           // hood crown fold
+    px(ctx, '#4b5563', px0 + 8, py + 4, 2, 8);                 // left hood drape rim
+    px(ctx, '#4b5563', px0 + T - 10, py + 4, 2, 8);            // right hood drape rim
+    px(ctx, '#374151', px0 + 6, py + 11, T - 12, 3);           // neck/shoulder cowl fold
     if (dir !== 'up') {
-      px(ctx, '#f59e0b', px0 + 12, py + 8, 2, 2);
-      px(ctx, '#f59e0b', px0 + T - 14, py + 8, 2, 2);
+      px(ctx, '#f5cba7', px0 + 10, py + 5, T - 20, 7);         // skin face
+      px(ctx, '#d9a074', px0 + 10, py + 5, T - 20, 2);         // brow shadow under hood
+      px(ctx, '#1a1a2e', px0 + 12, py + 8, 2, 2);              // left dark eye
+      px(ctx, '#1a1a2e', px0 + T - 14, py + 8, 2, 2);          // right dark eye
+    } else {
+      px(ctx, '#111827', px0 + 10, py + 5, T - 20, 7);         // back of hood
+      px(ctx, '#374151', px0 + 12, py + 6, T - 24, 3);         // back hood crease
     }
 
     if (isRooted) {
@@ -473,18 +473,17 @@ const Sprites = (() => {
     px(ctx, '#374151', x + 20, y + 14 + bob, 4, 15);
     px(ctx, '#4b5563', x + 6, y + 13 + bob, 20, 4);
     px(ctx, '#94a3b8', x + 12, y + 22 + bob, 8, 2);
-    // Deep dark grey hood + shadowed face + glowing amber eyes
-    ctx.fillStyle = '#1f2937';
-    ctx.beginPath();
-    ctx.moveTo(x + H, y - 1 + bob);
-    ctx.lineTo(x + 25, y + 13 + bob);
-    ctx.lineTo(x + 7, y + 13 + bob);
-    ctx.closePath();
-    ctx.fill();
-    px(ctx, '#374151', x + 10, y + 3 + bob, 12, 4);
-    px(ctx, '#090d16', x + 11, y + 7 + bob, 10, 6);
-    px(ctx, '#f59e0b', x + 12, y + 9 + bob, 2, 2);
-    px(ctx, '#f59e0b', x + 18, y + 9 + bob, 2, 2);
+    // Dark grey rounded hood pulled over head + skin face + dark eyes
+    px(ctx, '#1f2937', x + 9, y + 2 + bob, 14, 3);
+    px(ctx, '#1f2937', x + 7, y + 4 + bob, 18, 10);
+    px(ctx, '#374151', x + 10, y + 3 + bob, 12, 3);
+    px(ctx, '#4b5563', x + 8, y + 5 + bob, 2, 8);
+    px(ctx, '#4b5563', x + 22, y + 5 + bob, 2, 8);
+    px(ctx, '#374151', x + 6, y + 12 + bob, 20, 2);
+    px(ctx, '#f5cba7', x + 10, y + 6 + bob, 12, 7);
+    px(ctx, '#d9a074', x + 10, y + 6 + bob, 12, 2);
+    px(ctx, '#1a1a2e', x + 12, y + 9 + bob, 2, 2);
+    px(ctx, '#1a1a2e', x + 18, y + 9 + bob, 2, 2);
     // Staff + flame orb
     px(ctx, '#5c3d1e', x + 25, y + 6 + bob, 3, 21);
     ctx.fillStyle = 'rgba(255,100,0,0.4)';
@@ -703,19 +702,17 @@ const Sprites = (() => {
     px(ctx, '#a855f7', sx + 6, sy + T - 5, T - 12, 2);      // arcane hem
     px(ctx, '#38bdf8', sx + H - 2, sy + 21, 4, 2);          // lightning sash clasp
 
-    // Full Purple Hood & Shadowed Face with Electric Eyes
-    ctx.fillStyle = '#3b0764';
-    ctx.beginPath();
-    ctx.moveTo(sx + H, sy - 3);
-    ctx.lineTo(sx + T - 6, sy + 12);
-    ctx.lineTo(sx + 6, sy + 12);
-    ctx.closePath();
-    ctx.fill();
-    px(ctx, '#581c87', sx + 9, sy + 2, T - 18, 4);
-    px(ctx, '#7e22ce', sx + 7, sy + 10, T - 14, 3);
-    px(ctx, '#0f051d', sx + 10, sy + 5, T - 20, 7);
-    px(ctx, '#38bdf8', sx + 12, sy + 8, 2, 2);
-    px(ctx, '#38bdf8', sx + T - 14, sy + 8, 2, 2);
+    // Full Purple Rounded Hood pulled over head + Skin Face + Dark Eyes
+    px(ctx, '#3b0764', sx + 9, sy + 1, T - 18, 3);             // rounded hood top
+    px(ctx, '#3b0764', sx + 7, sy + 3, T - 14, 10);            // main hood cowl
+    px(ctx, '#581c87', sx + 10, sy + 2, T - 20, 3);            // hood crown fold
+    px(ctx, '#7e22ce', sx + 8, sy + 4, 2, 8);                  // left hood rim
+    px(ctx, '#7e22ce', sx + T - 10, sy + 4, 2, 8);             // right hood rim
+    px(ctx, '#581c87', sx + 6, sy + 11, T - 12, 3);            // shoulder cowl fold
+    px(ctx, '#f5cba7', sx + 10, sy + 5, T - 20, 7);            // skin face
+    px(ctx, '#d9a074', sx + 10, sy + 5, T - 20, 2);            // brow shadow under hood
+    px(ctx, '#1a1a2e', sx + 12, sy + 8, 2, 2);                 // left dark eye
+    px(ctx, '#1a1a2e', sx + T - 14, sy + 8, 2, 2);             // right dark eye
 
     // Ornate Staff + Crackling Lightning Crystal
     px(ctx, '#334155', sx + T - 6, sy + 5, 3, 22);

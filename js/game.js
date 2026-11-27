@@ -316,6 +316,7 @@ class Game {
       }
 
       if (p.takeDamage(dmg)) {
+        p.rootedTimer = Math.max(p.rootedTimer, 400);
         Sound.hurt();
         this.triggerShake(isCharge || isKick ? 7 : 5, 160);
         p.addEffect('hurt', p.r, p.c, `-${dmg}`, '#ff4444');
@@ -573,6 +574,7 @@ class Game {
             p.addEffect('shield', p.r, p.c, res === 'broken' ? 'BROKE!' : 'BLOCKED!', '#60a5fa');
             if (res === 'broken') UI.showToast('🛡️ Shield broke!');
           } else if (p.takeDamage(proj.dmg)) {
+            p.rootedTimer = Math.max(p.rootedTimer, 400);
             Sound.hurt();
             this.triggerShake(5, 160);
             p.addEffect('hurt', p.r, p.c, `-${proj.dmg}`, '#22c55e');
@@ -630,15 +632,6 @@ class Game {
     }
 
     const nr = p.r + dr, nc = p.c + dc;
-
-    const enemy = this.enemies.find(e => e.alive && e.r === nr && e.c === nc);
-    if (enemy) {
-      if (dr < 0) p.dir = 'up';
-      else if (dr > 0) p.dir = 'down';
-      else if (dc < 0) p.dir = 'left';
-      else if (dc > 0) p.dir = 'right';
-      return;
-    }
 
     if (this.grid[nr][nc] === C.T_CHEST) {
       this._openChest(nr, nc);
