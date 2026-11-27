@@ -34,15 +34,15 @@
     const saved = UI.loadProgress();
     if (saved && saved.player) {
       btn.classList.remove('hidden');
-      const cls = saved.playerClass || 'knight';
-      const icon = cls === 'wizard' ? '🔮' : '⚔️';
-      if (info) info.textContent = `(F${saved.floor} • 💎${saved.player.score} ${icon})`;
+      const cls = saved.playerClass === 'wizard' ? 'Wizard' : 'Knight';
+      if (info) info.textContent = `(F${saved.floor} · ${saved.player.score} pts · ${cls})`;
     } else {
       btn.classList.add('hidden');
     }
   }
 
   // ── Title Screen ────────────────────────────────────────────
+  UI.refreshIcons();
   UI.animateTitleBg();
   updateContinueBtn();
   Music.play('title');
@@ -129,18 +129,32 @@
       document.getElementById('hud-mp').classList.remove('hidden');
       const fireBtn = document.getElementById('dpad-fire');
       const shieldBtn = document.getElementById('dpad-shield');
-      if (fireBtn) { fireBtn.classList.remove('hidden'); fireBtn.textContent = '🔥'; }
-      if (shieldBtn) { shieldBtn.textContent = '✨'; shieldBtn.style.borderColor = '#a78bfa'; }
-      document.getElementById('focus-prompt').textContent =
-        '🖱️ Click to play | Space=Fireball · E=Burst · Shift/Q=Barrier · M=Map';
+      if (fireBtn) {
+        fireBtn.classList.remove('hidden');
+        fireBtn.innerHTML = '<i data-lucide="flame"></i>';
+        UI.refreshIcons(fireBtn);
+      }
+      if (shieldBtn) {
+        shieldBtn.innerHTML = '<i data-lucide="sparkles"></i>';
+        shieldBtn.classList.add('wizard-barrier-btn');
+        UI.refreshIcons(shieldBtn);
+      }
+      const fp = document.getElementById('focus-prompt');
+      fp.innerHTML = '<i data-lucide="mouse"></i> Click to play | Space=Fireball · E=Burst · Shift/Q=Barrier · M=Map';
+      UI.refreshIcons(fp);
     } else {
       document.getElementById('hud-mp').classList.add('hidden');
       const fireBtn = document.getElementById('dpad-fire');
       const shieldBtn = document.getElementById('dpad-shield');
       if (fireBtn) fireBtn.classList.add('hidden');
-      if (shieldBtn) { shieldBtn.textContent = '🛡️'; shieldBtn.style.borderColor = ''; }
-      document.getElementById('focus-prompt').textContent =
-        '🖱️ Click to play | Space=Sword · Shift/Q=Shield · M=Map';
+      if (shieldBtn) {
+        shieldBtn.innerHTML = '<i data-lucide="shield"></i>';
+        shieldBtn.classList.remove('wizard-barrier-btn');
+        UI.refreshIcons(shieldBtn);
+      }
+      const fp = document.getElementById('focus-prompt');
+      fp.innerHTML = '<i data-lucide="mouse"></i> Click to play | Space=Sword · Shift/Q=Shield · M=Map';
+      UI.refreshIcons(fp);
     }
     UI.setClassBadge(cls);
 
@@ -178,7 +192,7 @@
 
     if (saveData) {
       game.loadSaveData(saveData);
-      UI.showToast(`🔮 Resumed Floor ${saveData.floor}!`);
+      UI.showToast(`Resumed Floor ${saveData.floor}!`);
     } else {
       game.startFloor(1);
     }
@@ -413,7 +427,8 @@
     muteBtn.addEventListener('click', () => {
       const isMuted = Sound.toggleMute();
       Music.setMuted(isMuted);
-      muteBtn.textContent = isMuted ? '🔇' : '🔊';
+      muteBtn.innerHTML = `<i data-lucide="${isMuted ? 'volume-x' : 'volume-2'}"></i>`;
+      UI.refreshIcons(muteBtn);
     });
   }
 
@@ -464,7 +479,7 @@
     if (!game) return;
     UI.saveProgress(game.serialize());
     Sound.save();
-    UI.showToast('💾 Progress Saved!');
+    UI.showToast('Progress Saved!');
   });
   document.getElementById('btn-quit').addEventListener('click', () => {
     UI.hideAllOverlays();
@@ -521,7 +536,7 @@
     const name = document.getElementById('vic-name-input').value.trim();
     const score = parseInt(document.getElementById('vic-score').textContent) || 0;
     UI.saveScore(name, score, C.FLOORS);
-    UI.showToast('👑 Victory score saved!');
+    UI.showToast('Victory score saved!');
     document.getElementById('btn-save-vic-score').disabled = true;
     document.getElementById('btn-save-vic-score').textContent = '✅ Saved';
   });

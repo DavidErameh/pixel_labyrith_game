@@ -58,6 +58,13 @@ const UI = (() => {
     if (el) el.textContent = keys;
   }
 
+  function refreshIcons(root) {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons(root ? { root } : undefined);
+    }
+  }
+
+  let _lastShieldIcon = '';
   // isWizard = show barrier display instead of knight shield
   function updateShield(active, hits, cooldown, isWizard = false) {
     const wrap   = document.getElementById('hud-shield');
@@ -67,9 +74,15 @@ const UI = (() => {
 
     wrap.classList.remove('active', 'cooldown', 'wizard-shield');
 
+    const wantIcon = isWizard ? 'sparkles' : 'shield';
+    if (icon && _lastShieldIcon !== wantIcon) {
+      _lastShieldIcon = wantIcon;
+      icon.innerHTML = `<i data-lucide="${wantIcon}"></i>`;
+      refreshIcons(icon);
+    }
+
     if (isWizard) {
       wrap.classList.add('wizard-shield');
-      icon.textContent = '✨';
       const maxH = C.WIZARD_BARRIER_HITS;
       if (cooldown > 0) {
         wrap.classList.add('cooldown');
@@ -81,7 +94,6 @@ const UI = (() => {
         status.textContent = `ARCANE (${hits}/${maxH})`;
       }
     } else {
-      icon.textContent = '🛡️';
       const maxH = C.KNIGHT_SHIELD_HITS;
       if (cooldown > 0) {
         wrap.classList.add('cooldown');
@@ -99,8 +111,10 @@ const UI = (() => {
   function setClassBadge(playerClass) {
     const badge = document.getElementById('hud-class-badge');
     if (!badge) return;
-    badge.textContent = playerClass === 'wizard' ? '🔮' : '⚔️';
+    const iconName = playerClass === 'wizard' ? 'wand-2' : 'swords';
+    badge.innerHTML = `<i data-lucide="${iconName}"></i>`;
     badge.title = playerClass === 'wizard' ? 'Wizard' : 'Knight';
+    refreshIcons(badge);
   }
 
   // Hide MP bar when playing as knight
@@ -142,7 +156,9 @@ const UI = (() => {
       const isCleared = cleared.includes(lab.id);
       const div = document.createElement('div');
       div.className = `worldmap-node ${lab.unlocked ? 'unlocked' : 'locked'}${isCleared ? ' cleared' : ''}`;
-      const badgeText = !lab.unlocked ? '🔒 LOCKED' : (isCleared ? '✓ CLEARED' : '▶ ENTER');
+      const badgeText = !lab.unlocked
+        ? '<i data-lucide="lock"></i> LOCKED'
+        : (isCleared ? '<i data-lucide="check"></i> CLEARED' : '<i data-lucide="play"></i> ENTER');
       div.innerHTML = `
         <div class="worldmap-node-left">
           <div class="worldmap-node-name">${lab.id}. ${lab.name}</div>
@@ -155,6 +171,7 @@ const UI = (() => {
       }
       container.appendChild(div);
     });
+    refreshIcons(container);
   }
 
   function showLore(text) {
@@ -353,7 +370,7 @@ const UI = (() => {
   }
 
   return {
-    showToast, updateHp, updateMp, updateScore, updateFloor, updateKeys,
+    refreshIcons, showToast, updateHp, updateMp, updateScore, updateFloor, updateKeys,
     updateShield, setClassBadge, hideMpBar,
     showGameOver, showLevelUp, showVictory, hideAllOverlays,
     showFloorBanner, showLore, saveProgress, loadProgress, clearProgress,

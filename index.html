@@ -21,14 +21,14 @@
       <div class="title-logo">
         <div class="logo-pixel-art" id="logo-art"></div>
         <h1 class="game-title">PIXEL<br/><span>LABYRINTH</span></h1>
-        <p class="game-subtitle">⚔️ The Seven Labyrinths ⚔️</p>
+        <p class="game-subtitle"><i data-lucide="swords"></i> The Seven Labyrinths <i data-lucide="swords"></i></p>
         <p class="game-lore-intro">Descend through six cursed floors per labyrinth. Defeat the Dark Knight and reach the Underworld.</p>
       </div>
       <div class="title-menu">
-        <button class="menu-btn continue-btn hidden" id="btn-continue">🔮 CONTINUE <span id="continue-info"></span></button>
-        <button class="menu-btn" id="btn-newgame">▶ NEW GAME</button>
-        <button class="menu-btn" id="btn-howtoplay">? HOW TO PLAY</button>
-        <button class="menu-btn secondary" id="btn-leaderboard">🏆 HIGH SCORES</button>
+        <button class="menu-btn continue-btn hidden" id="btn-continue"><i data-lucide="bookmark"></i> CONTINUE <span id="continue-info"></span></button>
+        <button class="menu-btn" id="btn-newgame"><i data-lucide="play"></i> NEW GAME</button>
+        <button class="menu-btn" id="btn-howtoplay"><i data-lucide="help-circle"></i> HOW TO PLAY</button>
+        <button class="menu-btn secondary" id="btn-leaderboard"><i data-lucide="trophy"></i> HIGH SCORES</button>
       </div>
       <div class="title-footer">
         <p>Use WASD / Arrow Keys on PC &nbsp;|&nbsp; D-Pad on Mobile</p>
@@ -40,17 +40,17 @@
   <!-- WORLD MAP SCREEN (7 LABYRINTHS) -->
   <div id="screen-worldmap" class="screen">
     <div class="worldmap-container">
-      <h2 class="worldmap-title">🗺️ WORLD MAP — THE SEVEN LABYRINTHS</h2>
+      <h2 class="worldmap-title"><i data-lucide="map"></i> WORLD MAP — THE SEVEN LABYRINTHS</h2>
       <p class="worldmap-sub">Descend from Duke Wiston's Castle down to The Underworld</p>
       <div id="worldmap-list" class="worldmap-list"></div>
-      <button class="menu-btn secondary" id="btn-back-worldmap" style="max-width:260px;">◀ BACK TO TITLE</button>
+      <button class="menu-btn secondary" id="btn-back-worldmap" style="max-width:260px;"><i data-lucide="arrow-left"></i> BACK TO TITLE</button>
     </div>
   </div>
 
   <!-- CLASS SELECT SCREEN -->
   <div id="screen-classselect" class="screen">
     <div class="classselect-container">
-      <h2 class="classselect-title">⚔️ CHOOSE YOUR LEGEND 🔮</h2>
+      <h2 class="classselect-title"><i data-lucide="swords"></i> CHOOSE YOUR LEGEND <i data-lucide="wand-2"></i></h2>
       <p class="classselect-sub">Your destiny awaits in Duke Wiston's Castle</p>
 
       <div class="class-cards">
@@ -60,15 +60,15 @@
           <div class="class-preview-wrap">
             <canvas id="knight-preview-canvas" class="class-preview-canvas"></canvas>
           </div>
-          <h3 class="class-name knight-name">⚔️ KNIGHT</h3>
+          <h3 class="class-name knight-name"><i data-lucide="swords"></i> KNIGHT</h3>
           <div class="class-stats">
-            <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val knight-col">15 ❤️❤️❤️</span></div>
+            <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val knight-col">15 <i data-lucide="heart"></i></span></div>
             <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val">Close-range sword</span></div>
             <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val knight-col">SHIFT/Q = Toggle Shield (5 hits)</span></div>
             <div class="stat-row"><span class="stat-label">MP</span><span class="stat-val dim-col">None</span></div>
           </div>
           <p class="class-quote">"The vaults answer to steel."</p>
-          <div class="class-difficulty knight-difficulty">★★★☆☆ BALANCED</div>
+          <div class="class-difficulty knight-difficulty"><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i> BALANCED</div>
           <button class="menu-btn class-pick-btn knight-btn">CHOOSE KNIGHT  [1]</button>
         </div>
 
@@ -77,15 +77,15 @@
           <div class="class-preview-wrap">
             <canvas id="wizard-preview-canvas" class="class-preview-canvas"></canvas>
           </div>
-          <h3 class="class-name wizard-name">🔮 WIZARD</h3>
+          <h3 class="class-name wizard-name"><i data-lucide="wand-2"></i> WIZARD</h3>
           <div class="class-stats">
-            <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val wizard-col">10 ❤️❤️</span></div>
-            <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val wizard-col">Space = Fireball 🔥</span></div>
-            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val wizard-col">SHIFT/Q = Toggle Barrier ✨</span></div>
+            <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val wizard-col">10 <i data-lucide="heart"></i></span></div>
+            <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val wizard-col">Space = Fireball <i data-lucide="flame"></i></span></div>
+            <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val wizard-col">SHIFT/Q = Toggle Barrier <i data-lucide="sparkles"></i></span></div>
             <div class="stat-row"><span class="stat-label">MP</span><span class="stat-val wizard-col">60 MP — regen passively</span></div>
           </div>
           <p class="class-quote">"Magic is the light in the dark."</p>
-          <div class="class-difficulty wizard-difficulty">★★★★☆ ADVANCED</div>
+          <div class="class-difficulty wizard-difficulty"><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i> ADVANCED</div>
           <button class="menu-btn class-pick-btn wizard-btn">CHOOSE WIZARD  [2]</button>
         </div>
 
@@ -101,54 +101,54 @@
       <h2>HOW TO PLAY</h2>
       <!-- Tabs -->
       <div class="howto-tabs">
-        <button class="howto-tab active" id="tab-knight-btn">⚔️ KNIGHT</button>
-        <button class="howto-tab" id="tab-wizard-btn">🔮 WIZARD</button>
+        <button class="howto-tab active" id="tab-knight-btn"><i data-lucide="swords"></i> KNIGHT</button>
+        <button class="howto-tab" id="tab-wizard-btn"><i data-lucide="wand-2"></i> WIZARD</button>
       </div>
 
       <!-- Knight tab -->
       <div id="tab-knight" class="howto-tab-content active">
         <div class="howto-grid">
-          <div class="howto-item">⚔️ <span>Space = Sword strike (dash-lunge)</span></div>
-          <div class="howto-item">🛡️ <span>Shift/Q = Toggle Shield (5 hits before cooldown)</span></div>
-          <div class="howto-item">❤️ <span>Collect hearts to restore HP</span></div>
-          <div class="howto-item">🗝️ <span>Find keys to unlock the exit door</span></div>
-          <div class="howto-item">🗺️ <span>Press M or tap Mini-map to expand full map</span></div>
-          <div class="howto-item">🔮 <span>Touch Runestone Shrines to save &amp; heal</span></div>
-          <div class="howto-item">👑 <span>Beware Red Knights &amp; the Dark Knight on Floor 6</span></div>
-          <div class="howto-item">💀 <span>Enemies counter-attack &amp; recover fast!</span></div>
+          <div class="howto-item"><i data-lucide="sword"></i> <span>Space = Sword strike (dash-lunge)</span></div>
+          <div class="howto-item"><i data-lucide="shield"></i> <span>Shift/Q = Toggle Shield (5 hits before cooldown)</span></div>
+          <div class="howto-item"><i data-lucide="heart"></i> <span>Collect hearts to restore HP</span></div>
+          <div class="howto-item"><i data-lucide="key-round"></i> <span>Find keys to unlock the exit door</span></div>
+          <div class="howto-item"><i data-lucide="map"></i> <span>Press M or tap Mini-map to expand full map</span></div>
+          <div class="howto-item"><i data-lucide="sparkles"></i> <span>Touch Runestone Shrines to save &amp; heal</span></div>
+          <div class="howto-item"><i data-lucide="crown"></i> <span>Beware Red Knights &amp; the Dark Knight on Floor 6</span></div>
+          <div class="howto-item"><i data-lucide="skull"></i> <span>Enemies counter-attack &amp; recover fast!</span></div>
         </div>
       </div>
 
       <!-- Wizard tab -->
       <div id="tab-wizard" class="howto-tab-content">
         <div class="howto-grid">
-          <div class="howto-item">🔥 <span>Space = Fireball (10 MP) — ranged, 4 tiles</span></div>
-          <div class="howto-item">💥 <span>E / 🔥 btn = Fire Burst AOE (25 MP, 2 tile radius)</span></div>
-          <div class="howto-item">✨ <span>Shift/Q = Toggle Arcane Barrier (20 MP, 2 hits)</span></div>
-          <div class="howto-item">⚡ <span>MP regens +2/sec passively, +8 per enemy killed</span></div>
-          <div class="howto-item">🗝️ <span>Find keys to unlock the exit door</span></div>
-          <div class="howto-item">🗺️ <span>Press M to expand dungeon map</span></div>
-          <div class="howto-item">🔮 <span>Shrines restore +2 HP +15 MP &amp; save progress</span></div>
-          <div class="howto-item">⚠️ <span>Wizard has only 10 HP — manage MP carefully!</span></div>
+          <div class="howto-item"><i data-lucide="flame"></i> <span>Space = Fireball (10 MP) — ranged, 4 tiles</span></div>
+          <div class="howto-item"><i data-lucide="zap"></i> <span>E / Burst btn = Fire Burst AOE (25 MP, 2 tile radius)</span></div>
+          <div class="howto-item"><i data-lucide="sparkles"></i> <span>Shift/Q = Toggle Arcane Barrier (20 MP, 2 hits)</span></div>
+          <div class="howto-item"><i data-lucide="zap"></i> <span>MP regens +2/sec passively, +8 per enemy killed</span></div>
+          <div class="howto-item"><i data-lucide="key-round"></i> <span>Find keys to unlock the exit door</span></div>
+          <div class="howto-item"><i data-lucide="map"></i> <span>Press M to expand dungeon map</span></div>
+          <div class="howto-item"><i data-lucide="sparkles"></i> <span>Shrines restore +2 HP +15 MP &amp; save progress</span></div>
+          <div class="howto-item"><i data-lucide="alert-triangle"></i> <span>Wizard has only 10 HP — manage MP carefully!</span></div>
         </div>
       </div>
 
       <div class="controls-section">
         <h3>CONTROLS</h3>
         <div class="controls-grid">
-          <div>⌨️ <strong>PC (Knight):</strong> WASD/Arrows · Space=Attack · Shift/Q=Shield · M=Map</div>
-          <div>⌨️ <strong>PC (Wizard):</strong> WASD/Arrows · Space=Fireball · E=Fire Burst · Shift/Q=Barrier · M=Map</div>
+          <div><i data-lucide="keyboard"></i> <strong>PC (Knight):</strong> WASD/Arrows · Space=Attack · Shift/Q=Shield · M=Map</div>
+          <div><i data-lucide="keyboard"></i> <strong>PC (Wizard):</strong> WASD/Arrows · Space=Fireball · E=Fire Burst · Shift/Q=Barrier · M=Map</div>
         </div>
       </div>
-      <button class="menu-btn" id="btn-back-howto">◀ BACK</button>
+      <button class="menu-btn" id="btn-back-howto"><i data-lucide="arrow-left"></i> BACK</button>
     </div>
   </div>
 
   <div id="screen-leaderboard" class="screen">
     <div class="leaderboard-container">
-      <h2>🏆 HIGH SCORES</h2>
+      <h2><i data-lucide="trophy"></i> HIGH SCORES</h2>
       <div id="leaderboard-list"></div>
-      <button class="menu-btn" id="btn-back-lb">◀ BACK</button>
+      <button class="menu-btn" id="btn-back-lb"><i data-lucide="arrow-left"></i> BACK</button>
     </div>
   </div>
 
@@ -168,23 +168,23 @@
           <span id="mp-text">60/60</span>
         </div>
         <div id="hud-shield">
-          <span id="shield-icon">🛡️</span>
+          <span id="shield-icon"><i data-lucide="shield"></i></span>
           <span id="shield-status">READY (5/5)</span>
         </div>
       </div>
       <div id="hud-center">
         <span id="hud-level-label">FLOOR</span>
         <span id="hud-level">1</span>
-        <span id="hud-class-badge" title="Class">⚔️</span>
+        <span id="hud-class-badge" title="Class"><i data-lucide="swords"></i></span>
       </div>
       <div id="hud-right">
-        <div id="hud-score">💎 <span id="score-val">0</span></div>
-        <div id="hud-keys">🗝️ <span id="keys-val">0</span></div>
+        <div id="hud-score"><i data-lucide="gem"></i> <span id="score-val">0</span></div>
+        <div id="hud-keys"><i data-lucide="key-round"></i> <span id="keys-val">0</span></div>
         <div class="hud-actions">
-          <button id="btn-fullscreen" title="Fullscreen">⛶</button>
-          <button id="btn-map" title="Expand Map (M)">🗺️</button>
-          <button id="btn-mute" title="Mute/Unmute Sound">🔊</button>
-          <button id="btn-pause" title="Pause (Esc)">⏸</button>
+          <button id="btn-fullscreen" title="Fullscreen"><i data-lucide="maximize-2"></i></button>
+          <button id="btn-map" title="Expand Map (M)"><i data-lucide="map"></i></button>
+          <button id="btn-mute" title="Mute/Unmute Sound"><i data-lucide="volume-2"></i></button>
+          <button id="btn-pause" title="Pause (Esc)"><i data-lucide="pause"></i></button>
         </div>
       </div>
     </div>
@@ -193,29 +193,29 @@
     <div id="game-wrap">
       <canvas id="game-canvas" tabindex="0"></canvas>
       <canvas id="minimap-canvas" title="Click or press M to expand map"></canvas>
-      <div id="focus-prompt">🖱️ Click here to play &nbsp;|&nbsp; ⌨️ Space: Attack · Shift/Q: Shield · M: Map</div>
+      <div id="focus-prompt"><i data-lucide="mouse"></i> Click here to play &nbsp;|&nbsp; <i data-lucide="keyboard"></i> Space: Attack · Shift/Q: Shield · M: Map</div>
     </div>
 
     <!-- MOBILE DUAL-THUMB CONTROLS -->
     <div id="touch-move" class="mobile-only">
       <div class="dpad-row">
-        <button class="dpad-btn" id="dpad-up" aria-label="Up">▲</button>
+        <button class="dpad-btn" id="dpad-up" aria-label="Up"><i data-lucide="chevron-up"></i></button>
       </div>
       <div class="dpad-row">
-        <button class="dpad-btn" id="dpad-left" aria-label="Left">◀</button>
+        <button class="dpad-btn" id="dpad-left" aria-label="Left"><i data-lucide="chevron-left"></i></button>
         <div class="dpad-spacer"></div>
-        <button class="dpad-btn" id="dpad-right" aria-label="Right">▶</button>
+        <button class="dpad-btn" id="dpad-right" aria-label="Right"><i data-lucide="chevron-right"></i></button>
       </div>
       <div class="dpad-row">
-        <button class="dpad-btn" id="dpad-down" aria-label="Down">▼</button>
+        <button class="dpad-btn" id="dpad-down" aria-label="Down"><i data-lucide="chevron-down"></i></button>
       </div>
     </div>
 
     <div id="touch-actions" class="mobile-only">
-      <button class="dpad-btn dpad-fire hidden" id="dpad-fire" aria-label="Fire Burst">🔥</button>
+      <button class="dpad-btn dpad-fire hidden" id="dpad-fire" aria-label="Fire Burst"><i data-lucide="flame"></i></button>
       <div class="action-bottom-row">
-        <button class="dpad-btn dpad-shield" id="dpad-shield" aria-label="Shield">🛡️</button>
-        <button class="dpad-btn dpad-center dpad-atk" id="dpad-action" aria-label="Attack">⚔</button>
+        <button class="dpad-btn dpad-shield" id="dpad-shield" aria-label="Shield"><i data-lucide="shield"></i></button>
+        <button class="dpad-btn dpad-center dpad-atk" id="dpad-action" aria-label="Attack"><i data-lucide="sword"></i></button>
       </div>
     </div>
   </div>
@@ -229,57 +229,58 @@
 
   <div id="overlay-map" class="overlay hidden">
     <canvas id="expanded-map-canvas" width="1260" height="560"></canvas>
-    <button id="btn-close-map" class="map-floating-close" title="Close Map (M)">✕ (M)</button>
+    <button id="btn-close-map" class="map-floating-close" title="Close Map (M)"><i data-lucide="x"></i> (M)</button>
   </div>
 
   <div id="overlay-pause" class="overlay hidden">
     <div class="overlay-box">
-      <h2>⏸ PAUSED</h2>
-      <button class="menu-btn" id="btn-resume">▶ RESUME</button>
-      <button class="menu-btn" id="btn-pause-save">💾 SAVE PROGRESS</button>
-      <button class="menu-btn secondary" id="btn-quit">🏠 MAIN MENU</button>
+      <h2><i data-lucide="pause"></i> PAUSED</h2>
+      <button class="menu-btn" id="btn-resume"><i data-lucide="play"></i> RESUME</button>
+      <button class="menu-btn" id="btn-pause-save"><i data-lucide="save"></i> SAVE PROGRESS</button>
+      <button class="menu-btn secondary" id="btn-quit"><i data-lucide="home"></i> MAIN MENU</button>
     </div>
   </div>
 
   <div id="overlay-gameover" class="overlay hidden">
     <div class="overlay-box">
-      <h2>💀 GAME OVER</h2>
+      <h2><i data-lucide="skull"></i> GAME OVER</h2>
       <p>You fell on <strong>Floor <span id="go-floor">1</span></strong></p>
       <p>Score: <strong><span id="go-score">0</span></strong></p>
       <input id="go-name-input" type="text" placeholder="Enter your name..." maxlength="12" />
-      <button class="menu-btn" id="btn-save-score">💾 SAVE SCORE</button>
-      <button class="menu-btn continue-btn hidden" id="btn-load-save">🔮 LOAD SAVE POINT</button>
-      <button class="menu-btn" id="btn-retry">🔄 NEW RUN</button>
-      <button class="menu-btn secondary" id="btn-go-menu">🏠 MENU</button>
+      <button class="menu-btn" id="btn-save-score"><i data-lucide="save"></i> SAVE SCORE</button>
+      <button class="menu-btn continue-btn hidden" id="btn-load-save"><i data-lucide="bookmark"></i> LOAD SAVE POINT</button>
+      <button class="menu-btn" id="btn-retry"><i data-lucide="rotate-ccw"></i> NEW RUN</button>
+      <button class="menu-btn secondary" id="btn-go-menu"><i data-lucide="home"></i> MENU</button>
     </div>
   </div>
 
   <div id="overlay-levelup" class="overlay hidden">
     <div class="overlay-box levelup-box">
-      <h2>🎉 FLOOR CLEARED!</h2>
+      <h2><i data-lucide="award"></i> FLOOR CLEARED!</h2>
       <p>Proceeding to <strong>Floor <span id="lu-floor">2</span></strong></p>
       <div class="levelup-stats">
         <div>Enemies slain: <span id="lu-kills">0</span></div>
         <div>Gems collected: <span id="lu-gems">0</span></div>
       </div>
-      <button class="menu-btn" id="btn-nextlevel">⬇️ DESCEND</button>
+      <button class="menu-btn" id="btn-nextlevel"><i data-lucide="arrow-down"></i> DESCEND</button>
     </div>
   </div>
 
   <div id="overlay-victory" class="overlay hidden">
     <div class="overlay-box victory-box">
-      <h2>👑 VICTORY!</h2>
+      <h2><i data-lucide="crown"></i> VICTORY!</h2>
       <p>You have conquered the Labyrinth!</p>
       <p>Final Score: <strong><span id="vic-score">0</span></strong></p>
       <input id="vic-name-input" type="text" placeholder="Enter your name..." maxlength="12" />
-      <button class="menu-btn" id="btn-save-vic-score">💾 SAVE SCORE</button>
-      <button class="menu-btn secondary" id="btn-vic-menu">🏠 MENU</button>
+      <button class="menu-btn" id="btn-save-vic-score"><i data-lucide="save"></i> SAVE SCORE</button>
+      <button class="menu-btn secondary" id="btn-vic-menu"><i data-lucide="home"></i> MENU</button>
     </div>
   </div>
 
   <!-- Notification Toast -->
   <div id="toast" class="hidden"></div>
 
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script src="js/constants.js"></script>
   <script src="js/music.js"></script>
   <script src="js/audio.js"></script>
